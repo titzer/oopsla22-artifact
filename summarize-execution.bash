@@ -32,9 +32,9 @@ for BENCHMARK in $BENCHMARKS; do
                     echo $s >> $TMP.1
                 done
                 grep -v = $TMP.1 > $TMP
-                AVG=$(awk -f average.awk $TMP)
-                P5=$(awk -f p5.awk $TMP)
-                P95=$(awk -f p95.awk $TMP)
+                AVG=$(gawk -f average.awk $TMP)
+                P5=$(gawk -f p5.awk $TMP)
+                P95=$(gawk -f p95.awk $TMP)
                 #            echo "scale 6;" "($AVG - $P5) / $AVG"
                 P5_rel=$(echo "scale=6;" "($AVG - $P5)"  | bc)
                 P95_rel=$(echo "scale=6;" "($P95 - $AVG)"  | bc)
