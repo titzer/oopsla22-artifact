@@ -22,7 +22,7 @@ into the engines/ directory as shown.
 % popd
 ```
 
-(result: `v8/x64.release/d8`)
+(resulting executable: `v8/x64.release/d8`)
 
 
 ## JSC
@@ -35,7 +35,7 @@ into the engines/ directory as shown.
 % popd
 ```
 
-(result: `WebKit/WebKitBuild/Release/bin/jsc`)
+(resulting executable: `WebKit/WebKitBuild/Release/bin/jsc`)
 
 
 ## SPIDERMONKEY
@@ -51,7 +51,7 @@ into the engines/ directory as shown.
 % popd
 ```
 
-(result: gecko-dev/js/src/build_OPT.OBJ/dist/bin/js)
+(resulting executable: `gecko-dev/js/src/build_OPT.OBJ/dist/bin/js`)
 
 
 ## WIZARD
@@ -66,7 +66,7 @@ into the engines/ directory as shown.
 % popd
 ```
 
-(result: wizard-engine/bin/wizeng.x86-64-linux)
+(resulting executable: `wizard-engine/bin/wizeng.x86-64-linux`)
 
 There are 4 git branches in the source zip that build different versions of Wizard.
 
@@ -88,7 +88,7 @@ There are 4 git branches in the source zip that build different versions of Wiza
 % popd
 ```
 
-(result: source/wasm3/build/wasm3)
+(resulting executable: `source/wasm3/build/wasm3`)
 (branch exp_instrumentation:            cp source/wasm3/build/wasm3 ../engines/)
 
 
@@ -104,7 +104,7 @@ There are 4 git branches in the source zip that build different versions of Wiza
 % popd
 ```
 
-(result: wasm-micro-runtime/product-mini/platforms/linux/build/iwasm)
+(resulting executable: `wasm-micro-runtime/product-mini/platforms/linux/build/iwasm`)
 
 There are 3 branches in the source zip that build different versions of WAMR.
 ```
