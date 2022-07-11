@@ -89,7 +89,10 @@ There are 4 git branches in the source zip that build different versions of Wiza
 ```
 
 (resulting executable: `source/wasm3/build/wasm3`)
+
+```
 (branch exp_instrumentation:            cp source/wasm3/build/wasm3 ../engines/)
+```
 
 
 ## WAMR
