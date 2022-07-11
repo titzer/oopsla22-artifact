@@ -1,23 +1,23 @@
 # OVERVIEW
 
- 80-----------------------------------------------------------------------------
-100-------------------------------------------------------------------------------------------------
-
   This archive contains both the source and compiled binaries used in experiments for the paper
   entitled "A fast in-place interpreter for WebAssembly", paper #273 at OOPSLA 2022.
   It contains source checkouts of the benchmarks (PolybenchC) as well as the 6 engines tested
- (JavaScriptCore, SpiderMonkey, V8, wizard, wasm3, and Wasm Micro Runtime).
+  (JavaScriptCore, SpiderMonkey, V8, wizard, wasm3, and Wasm Micro Runtime).
 
 ## SUPPORTED PLATFORMS
 
-  The only supported platform for these experiments is Linux running on a x86-64 processor, due
-  mainly to the limitations of Wizard, the experimental engine evaluated in this paper.
+  The only supported platform for these experiments is *Linux* running on a *x86-64* processor, due
+  mainly to the limitations of [Wizard](https://github.com/titzer/wizard), the experimental engine evaluated
+  in the paper.
 
 ## POSSIBLY REQUIRED LIBRARIES
 
   You may need to install some libraries to run (definitely to build) some of the Web engines.
 
+```
  % sudo apt install libicu-dev python ruby bison flex cmake build-essential ninja-build git gperf
+```
 
 ## Contents
 
@@ -121,21 +121,27 @@ Section 4.4
   benchmark 100 times (to get 95% confidence intervals). See "Shorter runs" below to see
   how to reduce the running time.
 
+```
   % [DATA=<dir>] [RUNS=<N>] [ENGINES=<list>] ./run-execution-experiments.bash [<benchmark>*]
   % [DATA=<dir>] [RUNS=<N>] [ENGINES=<list>] ./run-translation-experiments.bash [<benchmark>*]
+```
 
   ### Summarizing data
 
   The raw data generated into a data directory mostly consists of numbers in text files. Two
   main scripts summarize the results for viewing or pasting into the spreadsheet.
 
+```
   % [DATA=<dir>] [ENGINES=<list>] [ERROR=1] ./summarize-execution.bash [<benchmark>*]
   % [DATA=<dir>] [ENGINES=<list>] ./summarize-translation.bash [<benchmark>*]
+```
 
   Note that the raw data gathered on the test machine is included in this archive, so it is
   possible to create a summary without running any experiments.
 
+```
   % DATA=./data-linux-4.15-i7-8700K [ENGINES=<list>] ./summarize-execution.bash [<benchmark>*]
+```
 
   ### Charting data
 
@@ -143,8 +149,9 @@ Section 4.4
 ## Expected outputs
 
   A typical run of the execution time experiments will produce output like so:
-  
-  % RUNS=5 ./run-execution-experiments.bash 
+
+```  
+ % RUNS=5 ./run-execution-experiments.bash 
 ---- bicg -----------
 sm-base     0.015246     0.015196     0.014956     0.015280     0.014996  min=0.014956  avg=0.015135  stddev=0.000000
 sm-opt     0.017844     0.019413     0.018549     0.018081     0.017999  min=0.017844  avg=0.018377  stddev=0.000000
@@ -161,17 +168,22 @@ wamr-fast     0.012073     0.012204     0.012012     0.012200     0.012087  min=
 ---- mvt -----------
 sm-base     0.015417     0.015232     0.014920     0.015104     0.015092  min=0.014920  avg=0.015153  stddev=0.000000
 sm-opt     0.017868     0.017908    ...
+```
 
   It will produce files in the data/ directory like so:
 
-  % ls data/execution.bicg.*
+```
+% ls data/execution.bicg.*
 data/execution.bicg.jsc-bbq  data/execution.bicg.js-int   data/execution.bicg.v8-liftoff    data/execution.bicg.wamr-fast  data/execution.bicg.wizard
 data/execution.bicg.jsc-int  data/execution.bicg.sm-base  data/execution.bicg.v8-turbofan   data/execution.bicg.wamr-slow
 data/execution.bicg.jsc-omg  data/execution.bicg.sm-opt   data/execution.bicg.wamr-classic  data/execution.bicg.wasm3
+```
 
   A typical run of the translation time experiments will produce output like so:
 
-  % RUNS=5 ./run-translation-experiments.bash 
+```
+  % RUNS=5 ./run-translation-experiments.bash
+
 ---- bicg -----------
 sm-base
 	us=.041685 bytes=2.345500 count=38
@@ -208,17 +220,19 @@ jsc-bbq
 	us=1.085764 bytes=0 count=38
 	us=1.061444 bytes=0 count=38
 ...
+```
 
   It will produce files in the data/ directory like so:
 
-  % ls data/translation.bicg.*
+```
+% ls data/translation.bicg.*
 data/translation.bicg.jsc-bbq.bytes  data/translation.bicg.sm-base.bytes     data/translation.bicg.v8-turbofan.bytes  data/translation.bicg.wasm3.bytes
 data/translation.bicg.jsc-bbq.us     data/translation.bicg.sm-base.us	     data/translation.bicg.v8-turbofan.us     data/translation.bicg.wasm3.us
 data/translation.bicg.jsc-int.bytes  data/translation.bicg.sm-opt.bytes      data/translation.bicg.wamr.bytes	      data/translation.bicg.wizard.bytes
 data/translation.bicg.jsc-int.us     data/translation.bicg.sm-opt.us	     data/translation.bicg.wamr-fast.bytes    data/translation.bicg.wizard.us
 data/translation.bicg.jsc-omg.bytes  data/translation.bicg.v8-liftoff.bytes  data/translation.bicg.wamr-fast.us
 data/translation.bicg.jsc-omg.us     data/translation.bicg.v8-liftoff.us     data/translation.bicg.wamr.us
-
+```
 
 
 ## Expected running time
@@ -233,6 +247,7 @@ data/translation.bicg.jsc-omg.us     data/translation.bicg.v8-liftoff.us     dat
   or engines. Generally, the script will overwrite data from previous runs of the same benchmark,
   so using a partial data directory is recommended.
 
+```
   % mkdir -p partial
   
   % DATA=partial RUNS=5 ./run-execution-experiments.bash
@@ -240,3 +255,4 @@ data/translation.bicg.jsc-omg.us     data/translation.bicg.v8-liftoff.us     dat
   % DATA=partial RUNS=5 ./run-execution-experiments.bash bicg
 
   % DATA=partial RUNS=5 ENGINES="wizard wamr-fast" ./run-execution-experiments.bash bicg
+```
