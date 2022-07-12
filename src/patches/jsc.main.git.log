@@ -1,0 +1,15 @@
+commit f4367f2cffe45c4514079c73232cf425757ab44e
+Author: James Hilliard <james.hilliard1@gmail.com>
+Date:   Sun Jul 10 15:00:23 2022 -0700
+
+    Fix IPC::Connection::sendOutputMessage(IPC::UnixMessage&) Syscall param sendmsg(msg.msg_iov[2]) points to uninitialised byte(s)
+    https://bugs.webkit.org/show_bug.cgi?id=242518
+    
+    Reviewed by Fujii Hironori.
+    
+    Initialize deviceScaleFactor and updateScaleFactor so that we don't try
+    to encode uninitialized memory.
+    
+    * Source/WebKit/Shared/UpdateInfo.h:
+    
+    Canonical link: https://commits.webkit.org/252330@main
