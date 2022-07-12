@@ -1,25 +1,14 @@
-
-- test build from source (unzip and instructions)
-* wizard
-* wasm3
-* wamr
-* v8
-* spidermonkey
-* jsc
-
-- test with bins unzipped
-  wizard
-  wasm3
-  wamr
-  v8
-  spidermonkey
-  jsc
-
-- upload final zips to Google Drive
-- add documentation to README on where to get source/bin zips
-
 - make final archive (.zip) for OOPSLA artifact submission
 
+* add documentation to README on where to get source/bin zips
+* upload final zips to Google Drive
+* test build from source (unzip and instructions)
+ * wizard
+ * wasm3
+ * wamr
+ * v8
+ * spidermonkey
+ * jsc
 * update source zips after committing engine/branch modifications again
 * gather experimental data on magic carpet
 * gather experimental data on kabal
