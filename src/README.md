@@ -1,19 +1,39 @@
 # SOURCE DIRECTORY OVERVIEW
 
-This artifact includes the full source checkouts of the various engines benchmarked in this paper,
-each archived as a .zip before compilation.
+Source code for all engines used in the evaluation is, or should be, extracted to this directory.
 Each engine is a git repository with branches that have engine-specific modifications to gather instrumentation.
-It should not be necessary to rebuild the engines from source.
-However, if rebuilding from source is required, the source folders can be removed and the archives re-extracted.
-Note that some engines have multiple configurations that required modifications to configuration files and/or source.
-Each is checked in as a separate git branch as indicated below; the results of the build process were copied
-into the engines/ directory as shown.
+
+## OOPSLA Artifact evaluation
+
+This artifact includes the full source checkouts of the various engines benchmarked in this paper as `.zip` files.
+The build results for all engines (i.e. runnable binaries) are included in this archive, pre-extracted.
+Everything should run out of the box; you should be able to skip further steps in this file, unless something doesn't
+work.
+If you need to rebuild from source, the `.zip` files are here in the archive; no need to download from Google Drive.
+
+## If you cloned from GitHub
+
+For GitHub, the `.zip` files are too large to check in, so they are included as a drive link.
+
+```
+https://drive.google.com/drive/folders/1At4Wfpny4JVlmlbJkC1rkG5ufHv2sgg2?usp=sharing
+```
+
+In Google Drive there are `.src.zip` and `.bin.zip` files.
+You should try first downloading and extracting the `.bin.zip` files and extracting them here, in the `src` directory.
+These contain a snapshot of build artifacts that will hopefully work on your system.
+If they do not, download the `.src.zip` files and follow the build instructions below.
 
 
 # BASIC BUILD INSTRUCTIONS
 
-Each engine has an associated source zip file that can be extracted in the `src` directory.
-The 3 web engines are too large to check their zip files into the repo, so they are included as a drive link.
+Instructions for building from source, should that be necessary, are here.
+Each is checked in as a separate git branch as indicated below; the results of the build process need to be copied
+into the engines/ directory as shown.
+The web engines (V8, SpiderMonkey, JavaScriptCore) run directly out of this directory, while the other engines
+need to have their artifacts copied into the `engines` directory.
+Note that some engines have multiple configurations that required different modifications to configuration files
+and/or source, and each configuration is a separate git branch.
 
 ## V8
 
@@ -132,5 +152,6 @@ There are 3 branches in the source zip that build different versions of WAMR.
 # BACKUP PATCHES
 
 As a backup in case it's not possible to either run binaries or unzip and build a source archive, patchfiles
-are also provided. They are located in the `patches/` directory and correspond to the `git diff` of the branches.
+are also provided.
+They are located in the `patches/` directory and correspond to the `git diff` of the branches.
 The git hash of each respective repo against which they are diffs are also provided.

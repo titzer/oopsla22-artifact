@@ -1,12 +1,10 @@
 
 - test build from source (unzip and instructions)
 * wizard
-  wasm3
-    - need to remove build/ directory
-    - undefined reference to reportSamples
+* wasm3
 * wamr
 * v8
-  spidermonkey
+* spidermonkey
 * jsc
 
 - test with bins unzipped
