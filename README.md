@@ -5,7 +5,7 @@
   It contains source checkouts of the benchmarks (PolybenchC) as well as the 6 engines tested
   (JavaScriptCore, SpiderMonkey, V8, wizard, wasm3, and Wasm Micro Runtime).
 
-## SUPPORTED PLATFORMS
+## SUPPORTED PLATFORM: x86-64-linux
 
   The only supported platform for these experiments is *Linux* running on a *x86-64* processor, due
   mainly to the limitations of [Wizard](https://github.com/titzer/wizard), the experimental engine evaluated
