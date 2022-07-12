@@ -19,7 +19,7 @@ The 3 web engines are too large to check their zip files into the repo, so they 
 
 Commands:
 ```
-unzip v8.zip
+unzip oopsla22-paper273-v8.src.zip
 pushd v8
 gn gen x64.release --args="is_debug=false target_cpu=\"x64\" v8_target_cpu=\"x64\""
 ninja -C x64.release d8
@@ -33,7 +33,7 @@ popd
 
 Commands:
 ```
-unzip jsc.zip
+unzip oopsla22-paper273-jsc.src.zip
 sudo apt install libicu-dev python ruby bison flex cmake build-essential ninja-build git gperf
 pushd WebKit
 Tools/Scripts/build-jsc --jsc-only --cmakeargs="-DENABLE_STATIC_JSC=ON -DUSE_THIN_ARCHIVES=OFF"
@@ -47,7 +47,7 @@ popd
 
 Commands:
 ```
-unzip spidermonkey.zip
+unzip oopsla22-paper273-spidermonkey.src.zip
 pushd gecko-dev
 cd js/src
 mkdir build_OPT.OBJ
@@ -64,12 +64,12 @@ popd
 
 Commands:
 ```
-unzip virgil.zip
+unzip oopsla22-paper273-virgil.src.zip
 pushd virgil
 bin/dev/aeneas bootstrap x86-linux
 export PATH=$PATH:$(pwd)/bin/
 popd
-unzip wizard.zip
+unzip oopsla22-paper273-wizard.src.zip
 pushd wizard-engine
 make bin/wizeng.x86-64-linux
 popd
@@ -90,7 +90,7 @@ There are 4 git branches in the source zip that build different versions of Wiza
 ## WASM3
 Commands:
 ```
-unzip wasm3.zip
+unzip oopsla22-paper273-wasm3.src.zip
 pushd wasm3
 mkdir -p build
 cd build
@@ -110,7 +110,7 @@ popd
 
 Commands:
 ```
-unzip wamr.zip
+unzip oopsla22-paper273-wamr.src.zip
 pushd wasm-micro-runtime
 cd product-mini/platforms/linux
 mkdir -p build
