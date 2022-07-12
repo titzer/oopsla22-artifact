@@ -60,11 +60,12 @@ The 3 web engines are too large to check their zip files into the repo, so they 
 ## WIZARD
 
 ```
-% unzip wizard.zip
+% unzip virgil.zip
 % pushd virgil
 % bin/dev/aeneas bootstrap x86-linux
 % export PATH=$PATH:$(pwd)/bin/
 % popd
+% unzip wizard.zip
 % pushd wizard-engine
 % make bin/wizeng.x86-64-linux
 % popd
