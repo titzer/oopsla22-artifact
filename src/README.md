@@ -17,25 +17,27 @@ The 3 web engines are too large to check their zip files into the repo, so they 
 
 ## V8
 
+Commands:
 ```
-% unzip v8.zip
-% pushd v8
-% gn gen x64.release --args="is_debug=false target_cpu=\"x64\" v8_target_cpu=\"x64\""
-% ninja -C x64.release/d8
-% popd
+unzip v8.zip
+pushd v8
+gn gen x64.release --args="is_debug=false target_cpu=\"x64\" v8_target_cpu=\"x64\""
+ninja -C x64.release d8
+popd
 ```
 
 (resulting executable: `v8/x64.release/d8`)
 
 
-## JSC
+## JAVASCRIPTCORE
 
+Commands:
 ```
-% unzip jsc.zip
-% sudo apt install libicu-dev python ruby bison flex cmake build-essential ninja-build git gperf
-% pushd WebKit
-% Tools/Scripts/build-jsc --jsc-only --cmakeargs="-DENABLE_STATIC_JSC=ON -DUSE_THIN_ARCHIVES=OFF"
-% popd
+unzip jsc.zip
+sudo apt install libicu-dev python ruby bison flex cmake build-essential ninja-build git gperf
+pushd WebKit
+Tools/Scripts/build-jsc --jsc-only --cmakeargs="-DENABLE_STATIC_JSC=ON -DUSE_THIN_ARCHIVES=OFF"
+popd
 ```
 
 (resulting executable: `WebKit/WebKitBuild/Release/bin/jsc`)
@@ -43,15 +45,16 @@ The 3 web engines are too large to check their zip files into the repo, so they 
 
 ## SPIDERMONKEY
 
+Commands:
 ```
-% unzip spidermonkey.zip
-% pushd gecko-dev
-% cd js/src
-% mkdir build_OPT.OBJ
-% cd build_OPT.OBJ
-% /bin/sh ../configure.in
-% make
-% popd
+unzip spidermonkey.zip
+pushd gecko-dev
+cd js/src
+mkdir build_OPT.OBJ
+cd build_OPT.OBJ
+/bin/sh ../configure.in
+make
+popd
 ```
 
 (resulting executable: `gecko-dev/js/src/build_OPT.OBJ/dist/bin/js`)
@@ -59,16 +62,17 @@ The 3 web engines are too large to check their zip files into the repo, so they 
 
 ## WIZARD
 
+Commands:
 ```
-% unzip virgil.zip
-% pushd virgil
-% bin/dev/aeneas bootstrap x86-linux
-% export PATH=$PATH:$(pwd)/bin/
-% popd
-% unzip wizard.zip
-% pushd wizard-engine
-% make bin/wizeng.x86-64-linux
-% popd
+unzip virgil.zip
+pushd virgil
+bin/dev/aeneas bootstrap x86-linux
+export PATH=$PATH:$(pwd)/bin/
+popd
+unzip wizard.zip
+pushd wizard-engine
+make bin/wizeng.x86-64-linux
+popd
 ```
 
 (resulting executable: `wizard-engine/bin/wizeng.x86-64-linux`)
@@ -84,14 +88,15 @@ There are 4 git branches in the source zip that build different versions of Wiza
 
 
 ## WASM3
+Commands:
 ```
-% unzip wasm3.zip
-% pushd wasm3
-% mkdir -p build
-% cd build
-% cmake ..
-% make -j
-% popd
+unzip wasm3.zip
+pushd wasm3
+mkdir -p build
+cd build
+cmake ..
+make -j
+popd
 ```
 
 (resulting executable: `source/wasm3/build/wasm3`)
@@ -103,15 +108,16 @@ There are 4 git branches in the source zip that build different versions of Wiza
 
 ## WAMR
 
+Commands:
 ```
-% unzip wamr.zip
-% pushd wasm-micro-runtime
-% cd product-mini/platforms/linux
-% mkdir -p build
-% cd build
-% cmake ..
-% make -j
-% popd
+unzip wamr.zip
+pushd wasm-micro-runtime
+cd product-mini/platforms/linux
+mkdir -p build
+cd build
+cmake ..
+make -j
+popd
 ```
 
 (resulting executable: `wasm-micro-runtime/product-mini/platforms/linux/build/iwasm`)

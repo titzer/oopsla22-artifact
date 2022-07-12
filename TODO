@@ -1,0 +1,38 @@
+- gather experimental data on kabal
+- update source zips after committing engine/branch modifications again
+- add virgil to wizard.zip
+
+- test build from source (unzip and instructions)
+  wizard
+   - needs exp_slow_config
+   * build
+  wasm3
+   - needs timer.h to be committed
+   - undefined reference to reportSamples
+  wamr
+   - timer.h not included
+  v8
+   - needs commit of function-compiler
+   * builds
+  spidermonkey
+   - timer.h not committed
+   - no distutils.util (sudo apt-get install python3-distutils)
+   - no zlib (sudo apt install zlib1g-dev)
+  jsc
+   - need to apply second patch
+
+
+- gather experimental data on magic carpet
+
+* Add polybench source
+* fix awk issue
+* make figures.ods
+* test chart building
+* patch JSC for space (kabal, CMU machine)
+* fix order of benchmarks for charts.ods
+* statically-link JSC 
+* try removing all but the binary directories
+* statically-link JSC (again)
+* update README for chart
+@ pathological program with 8x for wamr-classic
+
