@@ -2,7 +2,7 @@
 
 . ./common.bash
 
-ENGINES=${ENGINES:="v8-turbofan jsc-omg sm-opt jsc-bbq sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard wamr-classic wamr-slow"}
+ENGINES=${ENGINES:="v8-turbofan jsc-omg sm-opt jsc-bbq sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard wamr-classic"}
 
 if [ $# != 0 ]; then
     BENCHMARKS=$@
@@ -32,9 +32,9 @@ for BENCHMARK in $BENCHMARKS; do
                     echo $s >> $TMP.1
                 done
                 grep -v = $TMP.1 > $TMP
-                AVG=$(gawk -f average.awk $TMP)
-                P5=$(gawk -f p5.awk $TMP)
-                P95=$(gawk -f p95.awk $TMP)
+                AVG=$(awk -f average.awk $TMP)
+                P5=$(sort -n $TMP | awk -f p5.awk)
+                P95=$(sort -n $TMP | awk -f p95.awk)
                 #            echo "scale 6;" "($AVG - $P5) / $AVG"
                 P5_rel=$(echo "scale=6;" "($AVG - $P5)"  | bc)
                 P95_rel=$(echo "scale=6;" "($P95 - $AVG)"  | bc)
