@@ -35,45 +35,48 @@
  claims:
 
 Section 3.4
- - Final paragraph: "the difference between the best (tuned) and worse (untuned) interpreter
+
+ * Final paragraph: "the difference between the best (tuned) and worse (untuned) interpreter
    performance is 20% to 60% across the benchmark suite"
-   - supported by additional runs, comparing with ENGINES="wizeng wizeng-slow"
+   * supported by additional runs, comparing with ENGINES="wizeng wizeng-slow"
 
 Section 4.2
- - From Figure 8
-   - translation time for optimizing compilers is over 1000ns/byte
-   - translation time for baseline compilers ranges from ~200-800ns/byte
-   - translation time for rewriting interpreters ranges from ~20-200ns/byte
-   - translation time for wizard ranges from 3-4ns/byte
-Section 4.3
- - From Figure 9
-   - translation space ratio for wamr is about ~3.7
-   - translation space ratio for wasm3 is about ~2.0
-   - translation space ratio for jsc-int is about ~1.0
-   - translation space ratio for v8-liftoff is about 2.5-2.6
-   - translation space ratio for v8-turbofan is about 2.4-2.7
-   - translation space ratio for wizard is about 0.3-0.4
- Section 4.4
- - From Figure 10
-   - absolute execution time of benchmarks on v8-turbofan and wasm3
- - From Figure 11
-   - normalized execution time of wasm3 (relative to turbofan)
-     - below 1x for 4 shortest benchmarks, between 2x and 5x for middle 10, trending to 10x for remaining
-   - normalized execution time of baseline compilers
-     - below 1x for 4 shortest benchmarks, between 1x and 1x for middle 9, trending to 2.5x-3.x for remaining
-   - normalized execution time of optimizing compilers
-     - 1x to 2x for nearly all benchmarks
- - From Figure 12
-   - normalized execution time of all interpreters (relative to wasm3) is within 1.5x to 3.5x
-   - wizard performs roughly on par with wamr-classic (outliers are +/- 10%)
-   - wizard performs on with wamr-fast for 4 shortest benchmarks
-   - wamr-fast is around 1.5x slower than wasm3 on nearly all benchmarks
-   - wizard is on par (+/- 5%) with jsc-int for nearly all benchmarks
 
-Section 4.4
-  - the jump table for wamr improves performance by roughly 2x
-    - supported by additional runs, comparing ENGINES="wamr-classic wamr-slow"
-  - the pathological program can show up to 8x slowdown
+ * From Figure 8
+   * translation time for optimizing compilers is over 1000ns/byte
+   * translation time for baseline compilers ranges from ~200-800ns/byte
+   * translation time for rewriting interpreters ranges from ~20-200ns/byte
+   * translation time for wizard ranges from 3-4ns/byte
+   
+Section 4.3
+
+ * From Figure 9
+   * translation space ratio for wamr is about ~3.7
+   * translation space ratio for wasm3 is about ~2.0
+   * translation space ratio for jsc-int is about ~1.0
+   * translation space ratio for v8-liftoff is about 2.5-2.6
+   * translation space ratio for v8-turbofan is about 2.4-2.7
+   * translation space ratio for wizard is about 0.3-0.4
+   
+ Section 4.4
+ 
+ * From Figure 10
+   * absolute execution time of benchmarks on v8-turbofan and wasm3
+ * From Figure 11
+   * normalized execution time of wasm3 (relative to turbofan)
+     * below 1x for 4 shortest benchmarks, between 2x and 5x for middle 10, trending to 10x for remaining
+   * normalized execution time of baseline compilers
+     * below 1x for 4 shortest benchmarks, between 1x and 1x for middle 9, trending to 2.5x-3.x for remaining
+   * normalized execution time of optimizing compilers
+     * 1x to 2x for nearly all benchmarks
+ * From Figure 12
+   * normalized execution time of all interpreters (relative to wasm3) is within 1.5x to 3.5x
+   * wizard performs roughly on par with wamr-classic (outliers are +/- 10%)
+   * wizard performs on with wamr-fast for 4 shortest benchmarks
+   * wamr-fast is around 1.5x slower than wasm3 on nearly all benchmarks
+   * wizard is on par (+/- 5%) with jsc-int for nearly all benchmarks
+ * The jump table for wamr improves performance by roughly 2x
+   * Supported by additional runs, comparing ENGINES="wamr-classic wamr-slow"
 
 ## Getting Started Guide
 
@@ -87,18 +90,18 @@ Section 4.4
   in which they are embedded. V8 contains the entire JavaScript engine and its tests, which is
   considerable.
 
-  ### NO NEED TO BUILD FROM SOURCE
+### NO NEED TO BUILD FROM SOURCE
 
   Building the browser engines from source is a major exercise and could take hours of machine time.
   So, avoid building if you can! The JavaScript shells should run directly from the checkout,
   as they contain the results of building (i.e. binary JS shells).
   The remaining engines are simpler and easier to build, but also should not require building.
 
-  ### Sample data is included
+### Sample data is included
 
   Sample data that was used to make the figures in the paper is included (in data-linux-4.15-i7-8700K).
 
-  ### Sample figures are included
+### Sample figures are included
 
   The spreadsheet used to make the figures in the paper is included (`figures.ods`).
   Cut and paste the output of `summarize-*.bash` into appropriate places in the spreadsheet to
@@ -112,7 +115,7 @@ Section 4.4
 
 ## Step-by-step instructions
 
-  ### Gathering data
+### Gathering data
 
   You shouldn't need to build anything to begin generating data.
 
@@ -127,7 +130,7 @@ Section 4.4
   % [DATA=<dir>] [RUNS=<N>] [ENGINES=<list>] ./run-translation-experiments.bash [<benchmark>*]
 ```
 
-  ### Summarizing data
+### Summarizing data
 
   The raw data generated into a data directory mostly consists of numbers in text files. Two
   main scripts summarize the results for viewing or pasting into the spreadsheet.
@@ -144,7 +147,7 @@ Section 4.4
   % DATA=./data-linux-4.15-i7-8700K [ENGINES=<list>] ./summarize-execution.bash [<benchmark>*]
 ```
 
-  ### Charting data
+### Charting data
 
   To create figures similar to the ones in the paper, use the `figures.ods` spreadsheet.
   The scripts below generate a tab-separated output.
