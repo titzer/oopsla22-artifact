@@ -1,6 +1,5 @@
 - gather experimental data on kabal
 - update source zips after committing engine/branch modifications again
-- add virgil to wizard.zip
 
 - test build from source (unzip and instructions)
   wizard
@@ -18,8 +17,10 @@
    - timer.h not committed
    - no distutils.util (sudo apt-get install python3-distutils)
    - no zlib (sudo apt install zlib1g-dev)
+   * builds, but has warning for timer include
   jsc
    - need to apply second patch
+   * builds
 
 
 - gather experimental data on magic carpet
