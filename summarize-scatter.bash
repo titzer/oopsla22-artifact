@@ -1,6 +1,6 @@
 . ./common.bash
 
-ENGINES=${ENGINES:="v8-turbofan sm-opt sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard"}
+ENGINES=${ENGINES:="v8-turbofan sm-opt jsc-bbq sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard"}
 
 if [ $# != 0 ]; then
     BENCHMARKS=$@
@@ -8,15 +8,13 @@ fi
 
 # Execution time x translation time x translation space
 echo Execution time x translation time x translation space
-for engine in $ENGINES; do
-    printf "\t%s" $engine
-done
-printf "\n"
 
-for BENCHMARK in $BENCHMARKS; do
-    printf "%s" $BENCHMARK
+for engine in $ENGINES; do
+    printf "\t%s\n" $engine
     
-    for engine in $ENGINES; do
+    for BENCHMARK in $BENCHMARKS; do
+	printf "%s" $BENCHMARK
+    
         DATAFILE=$DATA/execution.$BENCHMARK.$engine
         if [ -f $DATAFILE ]; then
             # execution time
@@ -44,6 +42,7 @@ for BENCHMARK in $BENCHMARKS; do
         else
             printf "\t--"
         fi
+	printf "\n"
     done
-    printf "\n"
+	printf "\n"
 done

@@ -150,7 +150,7 @@ Section 4.4
     and the spreadsheet should update, making Figures 8 and 9.
   * Output of the `ERRORS=1 ./summarize-execution.bash` script can be pasted into the `Execution` sheet
     and the spreadsheet should update, making Figures 10 and 11.
-  * Output of the `./summarize-execution-xlate.bash` script can be pasted into the `Scatter` sheet
+  * Output of the `./summarize-scatter.bash` script can be pasted into the `Scatter` sheet
     and the spreadsheet should update, making the scatter plots in Figures 1 and 2.
 
 

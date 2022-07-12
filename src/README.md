@@ -6,11 +6,14 @@ Each engine is a git repository with branches that have engine-specific modifica
 It should not be necessary to rebuild the engines from source.
 However, if rebuilding from source is required, the source folders can be removed and the archives re-extracted.
 Note that some engines have multiple configurations that required modifications to configuration files and/or source.
-Each is checked in as a separate git branch and indicated below; the results of the build process were copied
+Each is checked in as a separate git branch as indicated below; the results of the build process were copied
 into the engines/ directory as shown.
 
 
 # BASIC BUILD INSTRUCTIONS
+
+Each engine has an associated source zip file that can be extracted in the `src` directory.
+The 3 web engines are too large to check their zip files into the repo, so they are included as a drive link.
 
 ## V8
 
@@ -57,6 +60,7 @@ into the engines/ directory as shown.
 ## WIZARD
 
 ```
+% unzip wizard.zip
 % pushd virgil
 % bin/dev/aeneas bootstrap x86-linux
 % export PATH=$PATH:$(pwd)/bin/
@@ -80,6 +84,7 @@ There are 4 git branches in the source zip that build different versions of Wiza
 
 ## WASM3
 ```
+% unzip wasm3.zip
 % pushd wasm3
 % mkdir -p build
 % cd build
@@ -98,6 +103,7 @@ There are 4 git branches in the source zip that build different versions of Wiza
 ## WAMR
 
 ```
+% unzip wamr.zip
 % pushd wasm-micro-runtime
 % cd product-mini/platforms/linux
 % mkdir -p build

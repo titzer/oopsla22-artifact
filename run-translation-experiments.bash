@@ -126,7 +126,7 @@ function sm_opt_compile_time() {
 function run() {
     $COLORS && printf "$CYAN"
     engine=$1
-    DATAFILE=data/translation.$BENCHMARK.$engine
+    DATAFILE=$DATA/translation.$BENCHMARK.$engine
     rm -f $DATAFILE.*
     
     if [ "$RUNS" -gt 1 ]; then
@@ -164,11 +164,8 @@ for BENCHMARK in $BENCHMARKS; do
             "wasm3")
                 run "wasm3" wasm3_translation_time $w
                 ;;
-            "wamr")
-                run "wamr" wamr_fast_translation_delta $w
-                ;;
             "wamr-fast")
-                run "wamr-fast" wamr_fast_translation_time $w
+                run "wamr-fast" wamr_fast_translation_delta $w
                 ;;
             "jsc-int")
                 run "jsc-int" jsc_int_translation_time $w
