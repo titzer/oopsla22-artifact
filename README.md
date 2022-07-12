@@ -146,12 +146,17 @@ Section 4.4
   ### Charting data
 
   To create figures similar to the ones in the paper, use the `figures.ods` spreadsheet.
+  The scripts below generate a tab-separated output. The tabs are important! Don't cut and paste from
+  a terminal window.
+
   * Output of the `./summarize-translation.bash` script can be pasted into the `Translation` sheet
     and the spreadsheet should update, making Figures 8 and 9.
   * Output of the `ERRORS=1 ./summarize-execution.bash` script can be pasted into the `Execution` sheet
     and the spreadsheet should update, making Figures 10 and 11.
   * Output of the `./summarize-scatter.bash` script can be pasted into the `Scatter` sheet
     and the spreadsheet should update, making the scatter plots in Figures 1 and 2.
+
+  In each of these sheets, the exact cell to paste the output data is indicated in red.
 
 
 ## Expected outputs

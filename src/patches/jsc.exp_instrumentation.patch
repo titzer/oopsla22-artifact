@@ -1,0 +1,598 @@
+diff --git a/Source/JavaScriptCore/jsc.cpp b/Source/JavaScriptCore/jsc.cpp
+index 19c1d833a6..1bc3d3793b 100644
+--- a/Source/JavaScriptCore/jsc.cpp
++++ b/Source/JavaScriptCore/jsc.cpp
+@@ -21,6 +21,7 @@
+  */
+ 
+ #include "config.h"
++#include "wasm/timer.h"
+ 
+ #include "APICast.h"
+ #include "ArrayBuffer.h"
+@@ -158,7 +159,7 @@ struct MemoryFootprint {
+     {
+         return { 0L, 0L };
+     }
+-    
++
+     static void resetPeak()
+     {
+     }
+@@ -171,14 +172,27 @@ struct MemoryFootprint {
+ 
+ using namespace JSC;
+ 
++#ifndef ENABLE_STATIC_JSC
++JS_EXPORT_PRIVATE Quantity llint_samples;
++JS_EXPORT_PRIVATE Quantity bbq_samples;
++JS_EXPORT_PRIVATE Quantity omg_samples;
++#endif
++
+ namespace {
+ 
+ #define EXIT_EXCEPTION 3
+ 
++void reportQuantity(const char* name, Quantity& quantity) {
++    printf("%s count: %d\n", name, quantity.count);
++    printf("%s in_bytes: %d\n", name, quantity.in_bytes);
++    printf("%s out_bytes: %d\n", name, quantity.out_bytes);
++    printf("%s us: %d\n", name, quantity.us);
++}
++
+ NO_RETURN_WITH_VALUE static void jscExit(int status)
+ {
+     waitForAsynchronousDisassembly();
+-    
++
+ #if ENABLE(DFG_JIT)
+     if (DFG::isCrashing()) {
+         for (;;) {
+@@ -190,6 +204,9 @@ NO_RETURN_WITH_VALUE static void jscExit(int status)
+         }
+     }
+ #endif // ENABLE(DFG_JIT)
++    reportQuantity("llint", llint_samples);
++    reportQuantity("bbq", bbq_samples);
++    reportQuantity("omg", omg_samples);
+     exit(status);
+ }
+ 
+@@ -219,7 +236,7 @@ public:
+ #endif
+     Message(Content&&, int32_t);
+     ~Message();
+-    
++
+     Content&& releaseContents() { return WTFMove(m_contents); }
+     int32_t index() const { return m_index; }
+ 
+@@ -232,7 +249,7 @@ class Worker : public BasicRawSentinelNode<Worker> {
+ public:
+     Worker(Workers&, bool isMain);
+     ~Worker();
+-    
++
+     void enqueue(const AbstractLocker&, RefPtr<Message>);
+     RefPtr<Message> dequeue();
+     bool isMain() const { return m_isMain; }
+@@ -253,19 +270,19 @@ class Workers {
+ public:
+     Workers();
+     ~Workers();
+-    
++
+     template<typename Func>
+     void broadcast(const Func&);
+-    
++
+     void report(const String&);
+     String tryGetReport();
+     String getReport();
+-    
++
+     static Workers& singleton();
+-    
++
+ private:
+     friend class Worker;
+-    
++
+     Lock m_lock;
+     Condition m_condition;
+     SentinelLinkedList<Worker, BasicRawSentinelNode<Worker>> m_workers;
+@@ -586,7 +603,7 @@ private:
+         putDirectNativeFunction(vm, this, Identifier::fromString(vm, "isInt32"_s), 0, functionIsInt32, CheckInt32Intrinsic, DontEnum);
+         putDirectNativeFunction(vm, this, Identifier::fromString(vm, "isPureNaN"_s), 0, functionIsPureNaN, CheckInt32Intrinsic, DontEnum);
+         putDirectNativeFunction(vm, this, Identifier::fromString(vm, "fiatInt52"_s), 0, functionIdentity, FiatInt52Intrinsic, DontEnum);
+-        
++
+         addFunction(vm, "effectful42"_s, functionEffectful42, 0);
+         addFunction(vm, "makeMasquerader"_s, functionMakeMasquerader, 0);
+         addFunction(vm, "hasCustomProperties"_s, functionHasCustomProperties, 0);
+@@ -610,7 +627,7 @@ private:
+         addFunction(vm, "releaseWeakRefs"_s, functionReleaseWeakRefs, 0);
+         addFunction(vm, "finalizationRegistryLiveCount"_s, functionFinalizationRegistryLiveCount, 0);
+         addFunction(vm, "finalizationRegistryDeadCount"_s, functionFinalizationRegistryDeadCount, 0);
+-        
++
+         addFunction(vm, "getRandomSeed"_s, functionGetRandomSeed, 0);
+         addFunction(vm, "setRandomSeed"_s, functionSetRandomSeed, 1);
+         addFunction(vm, "isRope"_s, functionIsRope, 1);
+@@ -648,13 +665,13 @@ private:
+         }
+ 
+         putDirect(vm, Identifier::fromString(vm, "console"_s), jsUndefined(), DontEnum);
+-        
++
+         Structure* plainObjectStructure = JSFinalObject::createStructure(vm, this, objectPrototype(), 0);
+-        
++
+         JSObject* dollar = JSFinalObject::create(vm, plainObjectStructure);
+         putDirect(vm, Identifier::fromString(vm, "$"_s), dollar, DontEnum);
+         putDirect(vm, Identifier::fromString(vm, "$262"_s), dollar, DontEnum);
+-        
++
+         addFunction(vm, dollar, "createRealm"_s, functionDollarCreateRealm, 0, static_cast<unsigned>(PropertyAttribute::None));
+         addFunction(vm, dollar, "detachArrayBuffer"_s, functionTransferArrayBuffer, 1, static_cast<unsigned>(PropertyAttribute::None));
+         addFunction(vm, dollar, "evalScript"_s, functionDollarEvalScript, 1, static_cast<unsigned>(PropertyAttribute::None));
+@@ -662,7 +679,7 @@ private:
+         addFunction(vm, dollar, "clearKeptObjects"_s, functionDollarClearKeptObjects, 0, static_cast<unsigned>(PropertyAttribute::None));
+         addFunction(vm, dollar, "globalObjectFor"_s, functionDollarGlobalObjectFor, 1, static_cast<unsigned>(PropertyAttribute::None));
+         addFunction(vm, dollar, "isRemoteFunction"_s, functionDollarIsRemoteFunction, 1, static_cast<unsigned>(PropertyAttribute::None));
+-        
++
+         dollar->putDirect(vm, Identifier::fromString(vm, "global"_s), globalThis());
+         dollar->putDirectCustomAccessor(vm, Identifier::fromString(vm, "IsHTMLDDA"_s),
+             CustomGetterSetter::create(vm, accessorMakeMasquerader, nullptr),
+@@ -671,7 +688,7 @@ private:
+ 
+         JSObject* agent = JSFinalObject::create(vm, plainObjectStructure);
+         dollar->putDirect(vm, Identifier::fromString(vm, "agent"_s), agent);
+-        
++
+         // The test262 INTERPRETING.md document says that some of these functions are just in the main
+         // thread and some are in the other threads. We just put them in all threads.
+         addFunction(vm, agent, "start"_s, functionDollarAgentStart, 1);
+@@ -735,7 +752,7 @@ private:
+     {
+         addFunction(vm, this, name, function, arguments, attributes);
+     }
+-    
++
+     static JSInternalPromise* moduleLoaderImportModule(JSGlobalObject*, JSModuleLoader*, JSString*, JSValue, const SourceOrigin&);
+     static Identifier moduleLoaderResolve(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue);
+     static JSInternalPromise* moduleLoaderFetch(JSGlobalObject*, JSModuleLoader*, JSValue, JSValue, JSValue);
+@@ -1408,7 +1425,7 @@ JSC_DEFINE_HOST_FUNCTION(functionSleepSeconds, (JSGlobalObject* globalObject, Ca
+         RETURN_IF_EXCEPTION(scope, encodedJSValue());
+         sleep(seconds);
+     }
+-    
++
+     return JSValue::encode(jsUndefined());
+ }
+ 
+@@ -1597,7 +1614,7 @@ JSC_DEFINE_HOST_FUNCTION(functionRun, (JSGlobalObject* globalObject, CallFrame*
+         throwException(realm, scope, exception);
+         return JSValue::encode(jsUndefined());
+     }
+-    
++
+     return JSValue::encode(jsNumber(stopWatch.getElapsedMS()));
+ }
+ 
+@@ -1628,7 +1645,7 @@ JSC_DEFINE_HOST_FUNCTION(functionRunString, (JSGlobalObject* globalObject, CallF
+         scope.throwException(realm, exception);
+         return JSValue::encode(jsUndefined());
+     }
+-    
++
+     return JSValue::encode(realm);
+ }
+ 
+@@ -1931,7 +1948,7 @@ JSC_DEFINE_HOST_FUNCTION(functionReadline, (JSGlobalObject* globalObject, CallFr
+         descriptor = file->descriptor();
+ 
+     while ((c = getc(descriptor)) != EOF) {
+-        // FIXME: Should we also break on \r? 
++        // FIXME: Should we also break on \r?
+         if (c == '\n')
+             break;
+         line.append(c);
+@@ -2021,7 +2038,7 @@ Worker::Worker(Workers& workers, bool isMain)
+ {
+     Locker locker { m_workers.m_lock };
+     m_workers.m_workers.append(this);
+-    
++
+     *currentWorker() = this;
+ }
+ 
+@@ -2131,7 +2148,7 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarEvalScript, (JSGlobalObject* globalObject
+ 
+     String sourceCode = callFrame->argument(0).toWTFString(globalObject);
+     RETURN_IF_EXCEPTION(scope, encodedJSValue());
+-    
++
+     JSValue global = callFrame->thisValue().get(globalObject, Identifier::fromString(vm, "global"_s));
+     RETURN_IF_EXCEPTION(scope, encodedJSValue());
+     while (global.inherits<JSProxy>())
+@@ -2197,7 +2214,7 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentStart, (JSGlobalObject* globalObject
+ 
+     String sourceCode = callFrame->argument(0).toWTFString(globalObject);
+     RETURN_IF_EXCEPTION(scope, encodedJSValue());
+-    
++
+     Lock didStartLock;
+     Condition didStartCondition;
+     bool didStart = false;
+@@ -2218,7 +2235,7 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentStart, (JSGlobalObject* globalObject
+         workerPath = callFrame->argument(1).toWTFString(globalObject);
+         RETURN_IF_EXCEPTION(scope, encodedJSValue());
+     }
+-    
++
+     Thread::create(
+         "JSC Agent",
+         [sourceCode = WTFMove(sourceCode).isolatedCopy(), workerPath = WTFMove(workerPath).isolatedCopy(), &didStartLock, &didStartCondition, &didStart] () {
+@@ -2233,7 +2250,7 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentStart, (JSGlobalObject* globalObject
+                         didStart = true;
+                         didStartCondition.notifyOne();
+                     }
+-                    
++
+                     NakedPtr<Exception> evaluationException;
+                     JSValue result;
+                     result = evaluate(globalObject, jscSource(sourceCode, SourceOrigin(URL({ }, workerPath))), JSValue(), evaluationException);
+@@ -2244,13 +2261,13 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentStart, (JSGlobalObject* globalObject
+                         exit(1);
+                 });
+         })->detach();
+-    
++
+     {
+         Locker locker { didStartLock };
+         while (!didStart)
+             didStartCondition.wait(didStartLock);
+     }
+-    
++
+     return JSValue::encode(jsUndefined());
+ }
+ 
+@@ -2263,7 +2280,7 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentReceiveBroadcast, (JSGlobalObject* g
+     auto callData = JSC::getCallData(callback);
+     if (callData.type == CallData::Type::None)
+         return JSValue::encode(throwException(globalObject, scope, createError(globalObject, "Expected callback"_s)));
+-    
++
+     RefPtr<Message> message;
+     {
+         ReleaseHeapAccessScope releaseAccess(vm.heap);
+@@ -2307,9 +2324,9 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentReport, (JSGlobalObject* globalObjec
+ 
+     String report = callFrame->argument(0).toWTFString(globalObject);
+     RETURN_IF_EXCEPTION(scope, encodedJSValue());
+-    
++
+     Workers::singleton().report(report);
+-    
++
+     return JSValue::encode(jsUndefined());
+ }
+ 
+@@ -2370,7 +2387,7 @@ JSC_DEFINE_HOST_FUNCTION(functionDollarAgentGetReport, (JSGlobalObject* globalOb
+     String string = Workers::singleton().tryGetReport();
+     if (!string)
+         return JSValue::encode(jsNull());
+-    
++
+     return JSValue::encode(jsString(vm, WTFMove(string)));
+ }
+ 
+@@ -2395,7 +2412,7 @@ JSC_DEFINE_HOST_FUNCTION(functionWaitForReport, (JSGlobalObject* globalObject, C
+     }
+     if (!string)
+         return JSValue::encode(jsNull());
+-    
++
+     return JSValue::encode(jsString(vm, WTFMove(string)));
+ }
+ 
+@@ -2409,7 +2426,7 @@ JSC_DEFINE_HOST_FUNCTION(functionFlashHeapAccess, (JSGlobalObject* globalObject,
+ {
+     VM& vm = globalObject->vm();
+     auto scope = DECLARE_THROW_SCOPE(vm);
+-    
++
+     double sleepTimeMs = 0;
+     if (callFrame->argumentCount() >= 1) {
+         sleepTimeMs = callFrame->argument(0).toNumber(globalObject);
+@@ -2472,11 +2489,11 @@ JSC_DEFINE_HOST_FUNCTION(functionReoptimizationRetryCount, (JSGlobalObject*, Cal
+ {
+     if (callFrame->argumentCount() < 1)
+         return JSValue::encode(jsUndefined());
+-    
++
+     CodeBlock* block = getSomeBaselineCodeBlockForFunction(callFrame->argument(0));
+     if (!block)
+         return JSValue::encode(jsNumber(0));
+-    
++
+     return JSValue::encode(jsNumber(block->reoptimizationRetryCounter()));
+ }
+ 
+@@ -2487,14 +2504,14 @@ JSC_DEFINE_HOST_FUNCTION(functionTransferArrayBuffer, (JSGlobalObject* globalObj
+ 
+     if (callFrame->argumentCount() < 1)
+         return JSValue::encode(throwException(globalObject, scope, createError(globalObject, "Not enough arguments"_s)));
+-    
++
+     JSArrayBuffer* buffer = jsDynamicCast<JSArrayBuffer*>(callFrame->argument(0));
+     if (!buffer)
+         return JSValue::encode(throwException(globalObject, scope, createError(globalObject, "Expected an array buffer"_s)));
+-    
++
+     ArrayBufferContents dummyContents;
+     buffer->impl()->transferTo(vm, dummyContents);
+-    
++
+     return JSValue::encode(jsUndefined());
+ }
+ 
+@@ -2929,7 +2946,7 @@ JSC_DEFINE_HOST_FUNCTION(functionWebAssemblyMemoryMode, (JSGlobalObject* globalO
+ {
+     VM& vm = globalObject->vm();
+     auto scope = DECLARE_THROW_SCOPE(vm);
+-    
++
+     if (!Wasm::isSupported())
+         return throwVMTypeError(globalObject, scope, "WebAssemblyMemoryMode should only be called if the useWebAssembly option is set"_s);
+ 
+@@ -3215,7 +3232,7 @@ static void dumpException(GlobalObject* globalObject, JSValue exception)
+     CHECK_EXCEPTION();
+     JSValue stackValue = exception.get(globalObject, stackID);
+     CHECK_EXCEPTION();
+-    
++
+     auto nameString = nameValue.toWTFString(globalObject);
+     CHECK_EXCEPTION();
+ 
+@@ -3226,7 +3243,7 @@ static void dumpException(GlobalObject* globalObject, JSValue exception)
+         CHECK_EXCEPTION();
+         printf("at %s:%s\n", fileNameString.utf8().data(), lineNumberString.utf8().data());
+     }
+-    
++
+     if (!stackValue.isUndefinedOrNull()) {
+         auto stackString = stackValue.toWTFString(globalObject);
+         CHECK_EXCEPTION();
+@@ -3404,7 +3421,7 @@ static void runInteractive(GlobalObject* globalObject)
+     if (!directoryName.isValid())
+         return;
+     SourceOrigin sourceOrigin(URL(directoryName, "./interpreter"_s));
+-    
++
+     bool shouldQuit = false;
+     while (!shouldQuit) {
+ #if HAVE(READLINE) && !RUNNING_FROM_XCODE
+@@ -3426,13 +3443,13 @@ static void runInteractive(GlobalObject* globalObject)
+             add_history(line);
+             free(line);
+         } while (error.syntaxErrorType() == ParserError::SyntaxErrorRecoverable);
+-        
++
+         if (error.isValid()) {
+             printf("%s:%d\n", error.message().utf8().data(), error.line());
+             continue;
+         }
+-        
+-        
++
++
+         NakedPtr<Exception> evaluationException;
+         JSValue returnValue = evaluate(globalObject, jscSource(source, sourceOrigin), JSValue(), evaluationException);
+ #else
+@@ -3440,7 +3457,7 @@ static void runInteractive(GlobalObject* globalObject)
+         Vector<char, 256> line;
+         int c;
+         while ((c = getchar()) != EOF) {
+-            // FIXME: Should we also break on \r? 
++            // FIXME: Should we also break on \r?
+             if (c == '\n')
+                 break;
+             line.append(c);
+@@ -3528,7 +3545,7 @@ void CommandLine::parseArguments(int argc, char** argv)
+     Options::initialize();
+     Options::useSharedArrayBuffer() = true;
+     Options::useAtMethod() = true;
+-    
++
+ #if PLATFORM(IOS_FAMILY)
+     Options::crashIfCantAllocateJITMemory() = true;
+ #endif
+@@ -3751,7 +3768,7 @@ template<typename Func>
+ int runJSC(const CommandLine& options, bool isWorker, const Func& func)
+ {
+     Worker worker(Workers::singleton(), !isWorker);
+-    
++
+     VM& vm = VM::create(HeapType::Large).leakRef();
+     if (!isWorker && options.m_canBlockIsFalse)
+         vm.m_typedArrayController = adoptRef(new JSC::SimpleTypedArrayController(false));
+@@ -3803,7 +3820,7 @@ int runJSC(const CommandLine& options, bool isWorker, const Func& func)
+             printf("JSC OSR EXIT FUZZ: encountered %u dynamic checks.\n", numberOfOSRExitFuzzChecks());
+         }
+ 
+-        
++
+         auto compileTimeStats = JIT::compileTimeStats();
+         Vector<CString> compileTimeKeys;
+         for (auto& entry : compileTimeStats)
+diff --git a/Source/JavaScriptCore/wasm/WasmB3IRGenerator.cpp b/Source/JavaScriptCore/wasm/WasmB3IRGenerator.cpp
+index f7e7084a3f..516e67116b 100644
+--- a/Source/JavaScriptCore/wasm/WasmB3IRGenerator.cpp
++++ b/Source/JavaScriptCore/wasm/WasmB3IRGenerator.cpp
+@@ -23,6 +23,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include "timer.h"
+ #include "config.h"
+ #include "WasmB3IRGenerator.h"
+ 
+@@ -3211,6 +3212,8 @@ static bool shouldDumpIRFor(uint32_t functionIndex)
+ 
+ Expected<std::unique_ptr<InternalFunction>, String> parseAndCompileB3(CompilationContext& compilationContext, const FunctionData& function, const TypeDefinition& signature, Vector<UnlinkedWasmToWasmCall>& unlinkedWasmToWasmCalls, const ModuleInformation& info, MemoryMode mode, CompilationMode compilationMode, uint32_t functionIndex, std::optional<bool> hasExceptionHandlers, uint32_t loopIndexForOSREntry, TierUpCount* tierUp)
+ {
++    Timer timer(omg_samples);
++    timer.m_quantity.in_bytes += function.data.size();
+     auto result = makeUnique<InternalFunction>();
+ 
+     compilationContext.wasmEntrypointJIT = makeUnique<CCallHelpers>();
+diff --git a/Source/JavaScriptCore/wasm/WasmBBQPlan.cpp b/Source/JavaScriptCore/wasm/WasmBBQPlan.cpp
+index be806e8a23..9c65654881 100644
+--- a/Source/JavaScriptCore/wasm/WasmBBQPlan.cpp
++++ b/Source/JavaScriptCore/wasm/WasmBBQPlan.cpp
+@@ -23,6 +23,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include "timer.h"
+ #include "config.h"
+ #include "WasmBBQPlan.h"
+ 
+@@ -43,6 +44,10 @@
+ #include <wtf/Locker.h>
+ #include <wtf/StdLibExtras.h>
+ 
++JS_EXPORT_PRIVATE Quantity llint_samples;
++JS_EXPORT_PRIVATE Quantity bbq_samples;
++JS_EXPORT_PRIVATE Quantity omg_samples;
++
+ namespace JSC { namespace Wasm {
+ 
+ namespace WasmBBQPlanInternal {
+@@ -199,8 +204,10 @@ void BBQPlan::compileFunction(uint32_t functionIndex)
+     m_wasmInternalFunctions[functionIndex] = compileFunction(functionIndex, m_compilationContexts[functionIndex], m_unlinkedWasmToWasmCalls[functionIndex], m_tierUpCounts[functionIndex].get());
+     {
+         auto linkBuffer = makeUnique<LinkBuffer>(*m_compilationContexts[functionIndex].wasmEntrypointJIT, nullptr, LinkBuffer::Profile::Wasm, JITCompilationCanFail);
+-        if (linkBuffer->isValid())
++        if (linkBuffer->isValid()) {
++            bbq_samples.out_bytes += linkBuffer->size();
+             m_wasmInternalFunctionLinkBuffers[functionIndex] = WTFMove(linkBuffer);
++        }
+     }
+ 
+     if (m_exportedFunctionIndices.contains(functionIndex) || m_moduleInformation->referencedFunctions().contains(functionIndex)) {
+@@ -219,7 +226,9 @@ void BBQPlan::compileFunction(uint32_t functionIndex)
+ 
+ std::unique_ptr<InternalFunction> BBQPlan::compileFunction(uint32_t functionIndex, CompilationContext& context, Vector<UnlinkedWasmToWasmCall>& unlinkedWasmToWasmCalls, TierUpCount* tierUp)
+ {
++    Timer timer(bbq_samples);
+     const auto& function = m_moduleInformation->functions[functionIndex];
++    timer.m_quantity.in_bytes += function.data.size();
+     TypeIndex typeIndex = m_moduleInformation->internalFunctionTypeIndices[functionIndex];
+     const TypeDefinition& signature = TypeInformation::get(typeIndex);
+     unsigned functionIndexSpace = m_moduleInformation->importFunctionCount() + functionIndex;
+diff --git a/Source/JavaScriptCore/wasm/WasmLLIntGenerator.cpp b/Source/JavaScriptCore/wasm/WasmLLIntGenerator.cpp
+index 822af58b85..50a8cfa2f1 100644
+--- a/Source/JavaScriptCore/wasm/WasmLLIntGenerator.cpp
++++ b/Source/JavaScriptCore/wasm/WasmLLIntGenerator.cpp
+@@ -23,6 +23,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include "timer.h"
+ #include "config.h"
+ #include "WasmLLIntGenerator.h"
+ 
+@@ -537,11 +538,15 @@ private:
+ 
+ Expected<std::unique_ptr<FunctionCodeBlockGenerator>, String> parseAndCompileBytecode(const uint8_t* functionStart, size_t functionLength, const TypeDefinition& signature, ModuleInformation& info, uint32_t functionIndex)
+ {
++    Timer timer(llint_samples);
++    timer.m_quantity.in_bytes += functionLength;
+     LLIntGenerator llintGenerator(info, functionIndex, signature);
+     FunctionParser<LLIntGenerator> parser(llintGenerator, functionStart, functionLength, signature, info);
+     WASM_FAIL_IF_HELPER_FAILS(parser.parse());
+ 
+-    return llintGenerator.finalize();
++    auto result = llintGenerator.finalize();
++    timer.m_quantity.out_bytes += result->instructions().sizeInBytes();
++    return result;
+ }
+ 
+ 
+diff --git a/Source/JavaScriptCore/wasm/WasmOMGPlan.cpp b/Source/JavaScriptCore/wasm/WasmOMGPlan.cpp
+index 7174f856f3..9fa3138b67 100644
+--- a/Source/JavaScriptCore/wasm/WasmOMGPlan.cpp
++++ b/Source/JavaScriptCore/wasm/WasmOMGPlan.cpp
+@@ -23,6 +23,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include "timer.h"
+ #include "config.h"
+ #include "WasmOMGPlan.h"
+ 
+@@ -62,6 +63,7 @@ OMGPlan::OMGPlan(Context* context, Ref<Module>&& module, uint32_t functionIndex,
+ 
+ void OMGPlan::work(CompilationEffort)
+ {
++    Timer timer(omg_samples);
+     ASSERT(m_calleeGroup->runnable());
+     ASSERT(m_calleeGroup.ptr() == m_module->calleeGroupFor(mode()));
+     const FunctionData& function = m_moduleInformation->functions[m_functionIndex];
+@@ -90,6 +92,8 @@ void OMGPlan::work(CompilationEffort)
+         return;
+     }
+ 
++    omg_samples.out_bytes += linkBuffer.size();
++    
+     InternalFunction* internalFunction = parseAndCompileResult->get();
+     Vector<CodeLocationLabel<ExceptionHandlerPtrTag>> exceptionHandlerLocations;
+     computeExceptionHandlerLocations(exceptionHandlerLocations, internalFunction, context, linkBuffer);
+diff --git a/Source/JavaScriptCore/wasm/timer.h b/Source/JavaScriptCore/wasm/timer.h
+new file mode 100644
+index 0000000000..e9268e0194
+--- /dev/null
++++ b/Source/JavaScriptCore/wasm/timer.h
+@@ -0,0 +1,37 @@
++#ifndef TIMER_H
++#define TIMER_H
++
++#include <sys/time.h>
++
++struct Quantity {
++    int count = 0;
++    int in_bytes = 0;
++    int out_bytes = 0;
++    int us = 0;
++};
++
++class Timer {
++ public:
++    long start = 0;
++    Quantity& m_quantity;
++    
++   Timer(Quantity& quantity) : m_quantity(quantity) {
++        struct timeval time;
++        gettimeofday(&time, 0);
++        start = time.tv_sec * 1000000 + time.tv_usec;
++   }
++   ~Timer() {
++    struct timeval time;
++        gettimeofday(&time, 0);
++        long after = time.tv_sec * 1000000 + time.tv_usec;
++
++        this->m_quantity.count++;
++        this->m_quantity.us += after - start;
++   }
++};
++
++extern Quantity llint_samples;
++extern Quantity bbq_samples;
++extern Quantity omg_samples;
++
++#endif
