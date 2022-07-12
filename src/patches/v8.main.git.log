@@ -1,0 +1,50 @@
+commit a66cd71e13048638615b6c751bde6a0ed5fc1aba
+Author: v8-ci-autoroll-builder <v8-ci-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com>
+Date:   Sat Jul 9 21:09:55 2022 -0700
+
+    Update V8 DEPS (trusted-origins)
+    
+    Rolling v8/build: https://chromium.googlesource.com/chromium/src/build/+log/e822edc..b8e09c1
+    
+    R=v8-waterfall-sheriff@grotations.appspotmail.com,mtv-sf-v8-sheriff@grotations.appspotmail.com
+    
+    Change-Id: I8e8106ef0ef093a5b25e927f7554e527cd27cca2
+    Reviewed-on: https://chromium-review.googlesource.com/c/v8/v8/+/3754183
+    Commit-Queue: v8-ci-autoroll-builder <v8-ci-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com>
+    Bot-Commit: v8-ci-autoroll-builder <v8-ci-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com>
+    Cr-Commit-Position: refs/heads/main@{#81623}
+
+commit 2f57e2b566b27a713611a5d4397762a0b824e8be
+Author: v8-ci-autoroll-builder <v8-ci-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com>
+Date:   Sat Jul 9 20:11:32 2022 -0700
+
+    Update V8 DEPS (trusted-versions)
+    
+    Rolling v8/third_party/catapult: https://chromium.googlesource.com/catapult/+log/7542172..1dee059
+    
+    Rolling v8/third_party/fuchsia-sdk/sdk: version:8.20220708.2.1..version:8.20220709.2.1
+    
+    R=v8-waterfall-sheriff@grotations.appspotmail.com,mtv-sf-v8-sheriff@grotations.appspotmail.com
+    
+    Change-Id: I4c552eb934374467f7c125a1cf38006b3b401bfc
+    Reviewed-on: https://chromium-review.googlesource.com/c/v8/v8/+/3754182
+    Bot-Commit: v8-ci-autoroll-builder <v8-ci-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com>
+    Commit-Queue: v8-ci-autoroll-builder <v8-ci-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com>
+    Cr-Commit-Position: refs/heads/main@{#81622}
+
+commit 666d559efb6cb5e696aeb4f6adc5c7d914bb877c
+Author: Leszek Swirski <leszeks@chromium.org>
+Date:   Sat Jul 9 15:39:36 2022 +0000
+
+    Revert "Reland "[flags] Enable freezing of flags""
+    
+    This reverts commit d34170f294fd69953f0436dfb7afcd34223e4f5f.
+    
+    Reason for revert: "The (hopefully) last issue in chromium is fixed"
+      Narrator: It wasn't -- https://ci.chromium.org/ui/p/chromium/builders/try/cast_shell_linux/1260757/overview
+    
+    Original change's description:
+    > Reland "[flags] Enable freezing of flags"
+    >
+    > This is a reland of commit 1ed7d0b8d14106bba9e19f4a6195a8ea7a9ec953.
+    > The (hopefully) last issue in chromium is fixed in https://crrev.com/c/3745533.

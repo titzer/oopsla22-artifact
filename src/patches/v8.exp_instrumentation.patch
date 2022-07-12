@@ -1,0 +1,166 @@
+diff --git a/src/d8/d8.cc b/src/d8/d8.cc
+index d332c05b3a..221c9fc16f 100644
+--- a/src/d8/d8.cc
++++ b/src/d8/d8.cc
+@@ -104,6 +104,8 @@
+ #define CHECK(condition) assert(condition)
+ #endif
+ 
++extern void dump_samples();
++
+ namespace v8 {
+ 
+ namespace {
+@@ -3707,6 +3709,7 @@ void Shell::OnExit(v8::Isolate* isolate, bool dispose) {
+       }
+     } else {
+       // Dump counters in formatted boxes.
++      dump_samples();
+       constexpr int kNameBoxSize = 64;
+       constexpr int kValueBoxSize = 13;
+       std::cout << "+" << std::string(kNameBoxSize, '-') << "+"
+diff --git a/src/wasm/function-compiler.cc b/src/wasm/function-compiler.cc
+index 8c430472a6..2a9ec24560 100644
+--- a/src/wasm/function-compiler.cc
++++ b/src/wasm/function-compiler.cc
+@@ -3,6 +3,7 @@
+ // found in the LICENSE file.
+ 
+ #include "src/wasm/function-compiler.h"
++#include "src/wasm/timer.h"
+ 
+ #include "src/codegen/compiler.h"
+ #include "src/codegen/optimized-compilation-info.h"
+@@ -16,6 +17,14 @@
+ #include "src/wasm/wasm-debug.h"
+ #include "src/wasm/wasm-engine.h"
+ 
++struct Samples liftoff_samples;
++struct Samples turbofan_samples;
++
++V8_EXPORT_PRIVATE void dump_samples() {
++  reportSamples("liftoff", liftoff_samples);
++  reportSamples("turbofan", turbofan_samples);
++}
++  
+ namespace v8 {
+ namespace internal {
+ namespace wasm {
+@@ -102,7 +111,9 @@ WasmCompilationResult WasmCompilationUnit::ExecuteFunctionCompilation(
+     case ExecutionTier::kNone:
+       UNREACHABLE();
+ 
+-    case ExecutionTier::kLiftoff:
++  case ExecutionTier::kLiftoff: {
++    START_TIMER(liftoff_samples);
++    ADD_IN_BYTES(liftoff_samples, func_body.end - func_body.start);
+       // The --wasm-tier-mask-for-testing flag can force functions to be
+       // compiled with TurboFan, and the --wasm-debug-mask-for-testing can force
+       // them to be compiled for debugging, see documentation.
+@@ -127,6 +138,7 @@ WasmCompilationResult WasmCompilationUnit::ExecuteFunctionCompilation(
+                 .set_detected_features(detected)
+                 .set_assembler_buffer_cache(buffer_cache)
+                 .set_debug_sidetable(debug_sidetable_ptr));
++        ADD_OUT_BYTES(liftoff_samples, result.code_desc.body_size());
+         if (result.succeeded()) break;
+       }
+ 
+@@ -138,13 +150,17 @@ WasmCompilationResult WasmCompilationUnit::ExecuteFunctionCompilation(
+       // TODO(wasm): We could actually stop or remove the tiering unit for this
+       // function to avoid compiling it twice with TurboFan.
+       V8_FALLTHROUGH;
+-
+-    case ExecutionTier::kTurbofan:
+-      result = compiler::ExecuteTurbofanWasmCompilation(
+-          env, wire_bytes_storage, func_body, func_index_, counters,
+-          buffer_cache, detected);
+-      result.for_debugging = for_debugging_;
+-      break;
++  }
++  case ExecutionTier::kTurbofan: {
++    START_TIMER(turbofan_samples);
++    ADD_IN_BYTES(turbofan_samples, func_body.end - func_body.start);
++    result = compiler::ExecuteTurbofanWasmCompilation(
++                                                      env, wire_bytes_storage, func_body, func_index_, counters,
++                                                      buffer_cache, detected);
++    result.for_debugging = for_debugging_;
++    ADD_OUT_BYTES(turbofan_samples, result.code_desc.body_size());
++    break;
++  }
+   }
+ 
+   return result;
+diff --git a/src/wasm/timer.h b/src/wasm/timer.h
+new file mode 100644
+index 0000000000..fb424f7e9e
+--- /dev/null
++++ b/src/wasm/timer.h
+@@ -0,0 +1,68 @@
++#ifndef TIMER_H
++#define TIMER_H
++
++#include <sys/time.h>
++#include <stdio.h>
++
++struct Samples {
++  long start;
++  int count;
++  int in_bytes;
++  int out_bytes;
++  int us;
++};
++
++#ifdef __cplusplus
++class Timer {
++ public:
++    long start = 0;
++    Samples& m_quantity;
++    
++   Timer(Samples& quantity) : m_quantity(quantity) {
++        struct timeval time;
++        gettimeofday(&time, 0);
++        start = time.tv_sec * 1000000 + time.tv_usec;
++   }
++   ~Timer() {
++    struct timeval time;
++        gettimeofday(&time, 0);
++        long after = time.tv_sec * 1000000 + time.tv_usec;
++
++        this->m_quantity.count++;
++        this->m_quantity.us += after - start;
++   }
++};
++#define START_TIMER(x) Timer __timer(x);
++#define END_TIMER(x)
++#else
++#define START_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    x.start = time.tv_sec * 1000000 + time.tv_usec; \
++  }
++#define END_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    long after = time.tv_sec * 1000000 + time.tv_usec; \
++    x.us += after - x.start; \
++  }
++#endif
++
++#define ADD_IN_BYTES(x, b) (x).in_bytes += (b); (x).count++;
++#define ADD_OUT_BYTES(x, b) (x).out_bytes += (b);
++
++extern struct Samples liftoff_samples;
++extern struct Samples turbofan_samples;
++
++#ifdef __cplusplus
++inline void reportSamples(const char* name, Samples& quantity) {
++#else
++inline void reportSamples(const char* name, struct Samples quantity) {
++#endif
++    printf("%s count: %d\n", name, quantity.count);
++    printf("%s in_bytes: %d\n", name, quantity.in_bytes);
++    printf("%s out_bytes: %d\n", name, quantity.out_bytes);
++    printf("%s us: %d\n", name, quantity.us);
++}
++
++#endif
