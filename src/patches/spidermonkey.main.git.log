@@ -1,0 +1,10 @@
+commit d0ce2b8e451edbc09bab1477e81b1f30773463c2
+Author: Mozilla Releng Treescript <release+treescript@mozilla.org>
+Date:   Sun Jul 10 19:05:20 2022 +0000
+
+    no bug - Bumping Firefox l10n changesets r=release a=l10n-bump DONTBUILD
+    
+    hr -> f6e5bbfdbe8200d5212ea4d97e61ee9375beadee
+    sk -> 6a35270f9850915c884389a73b19a98d263367d5
+    tg -> bfbfda9732bd44427f407747d3ddd5056a921332
+    zh-CN -> 3db761adab185f578b4dc5f145228c2a8e26d26e

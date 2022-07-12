@@ -1,0 +1,181 @@
+diff --git a/js/src/shell/js.cpp b/js/src/shell/js.cpp
+index 72a6bd8f05..664df41dd1 100644
+--- a/js/src/shell/js.cpp
++++ b/js/src/shell/js.cpp
+@@ -21,6 +21,7 @@
+ #include "mozilla/UniquePtrExtensions.h"  // UniqueFreePtr
+ #include "mozilla/Utf8.h"
+ #include "mozilla/Variant.h"
++#include "timer.h"
+ 
+ #include <algorithm>
+ #include <chrono>
+@@ -11977,8 +11978,17 @@ static bool SetGCParameterFromArg(JSContext* cx, char* arg) {
+   return true;
+ }
+ 
++class Teardown {
++public:
++  ~Teardown() {
++  reportSamples("opt", opt_samples);
++  reportSamples("base", base_samples);
++}
++};
++
+ int main(int argc, char** argv) {
+   PreInit();
++  Teardown teardown;
+ 
+   sArgc = argc;
+   sArgv = argv;
+diff --git a/js/src/timer.h b/js/src/timer.h
+new file mode 100644
+index 0000000000..45821c297b
+--- /dev/null
++++ b/js/src/timer.h
+@@ -0,0 +1,68 @@
++#ifndef TIMER_H
++#define TIMER_H
++
++#include <sys/time.h>
++#include <stdio.h>
++
++struct Samples {
++  long start;
++  int count;
++  int in_bytes;
++  int out_bytes;
++  int us;
++};
++
++#ifdef __cplusplus
++class Timer {
++ public:
++    long start = 0;
++    Samples& m_quantity;
++    
++   Timer(Samples& quantity) : m_quantity(quantity) {
++        struct timeval time;
++        gettimeofday(&time, 0);
++        start = time.tv_sec * 1000000 + time.tv_usec;
++   }
++   ~Timer() {
++    struct timeval time;
++        gettimeofday(&time, 0);
++        long after = time.tv_sec * 1000000 + time.tv_usec;
++
++        this->m_quantity.count++;
++        this->m_quantity.us += after - start;
++   }
++};
++#define START_TIMER(x) Timer __timer(x);
++#define END_TIMER(x)
++#else
++#define START_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    x.start = time.tv_sec * 1000000 + time.tv_usec; \
++  }
++#define END_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    long after = time.tv_sec * 1000000 + time.tv_usec; \
++    x.us += after - x.start; \
++  }
++#endif
++
++#define ADD_IN_BYTES(x, b) (x).in_bytes += (b); (x).count++;
++#define ADD_OUT_BYTES(x, b) (x).out_bytes += (b);
++
++extern MOZ_EXPORT struct Samples base_samples;
++extern MOZ_EXPORT struct Samples opt_samples;
++
++#ifdef __cplusplus
++inline void reportSamples(const char* name, Samples& quantity) {
++#else
++inline void reportSamples(const char* name, struct Samples quantity) {
++#endif
++    printf("%s count: %d\n", name, quantity.count);
++    printf("%s in_bytes: %d\n", name, quantity.in_bytes);
++    printf("%s out_bytes: %d\n", name, quantity.out_bytes);
++    printf("%s us: %d\n", name, quantity.us);
++}
++
++#endif
+diff --git a/js/src/wasm/WasmBaselineCompile.cpp b/js/src/wasm/WasmBaselineCompile.cpp
+index 5c77f97fc1..76637fddda 100644
+--- a/js/src/wasm/WasmBaselineCompile.cpp
++++ b/js/src/wasm/WasmBaselineCompile.cpp
+@@ -67,6 +67,7 @@
+ #include "wasm/WasmBCFrame.h"
+ #include "wasm/WasmBCRegDefs.h"
+ #include "wasm/WasmBCStk.h"
++#include "timer.h"
+ 
+ #include "jit/MacroAssembler-inl.h"
+ #include "wasm/WasmBCClass-inl.h"
+@@ -10422,7 +10423,10 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
+   }
+ 
+   for (const FuncCompileInput& func : inputs) {
++    Timer timer(base_samples);
+     Decoder d(func.begin, func.end, func.lineOrBytecode, error);
++    base_samples.in_bytes += (func.end - func.begin);
++    auto before = masm.instructionsSize();
+ 
+     // Build the local types vector.
+ 
+@@ -10449,6 +10453,7 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
+                                       f.finish())) {
+       return false;
+     }
++    base_samples.out_bytes += (masm.instructionsSize() - before);
+   }
+ 
+   masm.finish();
+diff --git a/js/src/wasm/WasmIonCompile.cpp b/js/src/wasm/WasmIonCompile.cpp
+index 35c500c73f..78e441ac69 100644
+--- a/js/src/wasm/WasmIonCompile.cpp
++++ b/js/src/wasm/WasmIonCompile.cpp
+@@ -29,6 +29,7 @@
+ #include "jit/IonOptimizationLevels.h"
+ #include "jit/ShuffleAnalysis.h"
+ #include "js/ScalarType.h"  // js::Scalar::Type
++#include "timer.h"
+ #include "wasm/WasmBaselineCompile.h"
+ #include "wasm/WasmBuiltins.h"
+ #include "wasm/WasmCodegenTypes.h"
+@@ -6838,6 +6839,9 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
+ #undef CHECK
+ }
+ 
++MOZ_EXPORT Samples opt_samples;
++MOZ_EXPORT Samples base_samples;
++
+ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
+                                const CompilerEnvironment& compilerEnv,
+                                LifoAlloc& lifo,
+@@ -6867,6 +6871,7 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
+   GenerateTrapExitRegisterOffsets(&trapExitLayout, &trapExitLayoutNumWords);
+ 
+   for (const FuncCompileInput& func : inputs) {
++    Timer timer(opt_samples);
+     JitSpewCont(JitSpew_Codegen, "\n");
+     JitSpew(JitSpew_Codegen,
+             "# ================================"
+@@ -6877,6 +6882,7 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
+             (int)func.index);
+ 
+     Decoder d(func.begin, func.end, func.lineOrBytecode, error);
++    opt_samples.in_bytes += (func.end - func.begin);
+ 
+     // Build the local types vector.
+ 
+@@ -6952,6 +6958,7 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
+                                         offsets)) {
+         return false;
+       }
++      opt_samples.out_bytes += (offsets.end - offsets.begin);
+     }
+ 
+     JitSpew(JitSpew_Codegen,
