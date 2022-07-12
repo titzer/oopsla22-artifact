@@ -1,6 +1,6 @@
 . ./common.bash
 
-ENGINES=${ENGINES:=$XLATE_ENGINES}
+ENGINES=${ENGINES:="v8-turbofan sm-opt sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard"}
 
 if [ $# != 0 ]; then
     BENCHMARKS=$@

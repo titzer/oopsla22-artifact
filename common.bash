@@ -10,7 +10,7 @@ BLUE='[0;34m'      ; LIGHTBLUE='[1;34m'
 LIGHTGRAY='[0;37m' ; WHITE='[1;37m'
 RED='[0;31m'       ; LIGHTRED='[1;31m'
 
-SRC=./source
+SRC=./src
 E=./engines
 
 V8=$SRC/v8/x64.release/d8
