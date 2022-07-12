@@ -1,0 +1,50 @@
+commit 9dcfce271c2fac86823725fc9ec0f75309d820e4
+Author: Nick Wanninger <nickwanninger@users.noreply.github.com>
+Date:   Mon Jun 20 11:00:55 2022 -0400
+
+    Check for if slot == c_slotUnused in PushConst (#315)
+
+commit 8523770b80ea1f78afcac21d837f9dfd50f0bed6
+Author: Felipe Gasper <FGasper@users.noreply.github.com>
+Date:   Wed Jun 1 05:53:58 2022 -0400
+
+    Fix Cygwin compatibility (#330)
+    
+    * Make simple WASI work in Cygwin.
+    
+    Issue #329
+    
+    * Prevent M3_WEAK from taking effect on Cygwin.
+    
+    Issue #329
+    
+    * Add CI to ensure that Cygwin doesn’t regress.
+    
+    Issue #329
+
+commit ce423d1861d34542f18f40ece2f2e049e99d4d35
+Author: Volodymyr Shymanskyy <vshymanskyi@gmail.com>
+Date:   Wed Apr 13 21:02:26 2022 +0300
+
+    Update CMakeLists.txt
+
+commit 9b4ee55d4b8fd9a735a9ba0c7432dc5a00465923
+Author: Felipe Gasper <FGasper@users.noreply.github.com>
+Date:   Wed Apr 13 13:48:48 2022 -0400
+
+    Add mention of Perl embedding (#326)
+
+commit 8441c82c4a98f554b12971450220b580c3c2b6df
+Author: ha1vk <2801045898@qq.com>
+Date:   Thu Apr 14 01:48:13 2022 +0800
+
+    fix WASI API read/write pread/pwrite buffer overflow (#324)
+    
+    Co-authored-by: 赵海 <zhaohai@cyberpeace.cn>
+
+commit 839e57a220547738dc2c1fd2249c8fe8627c7337
+Author: cui fliter <imcusg@gmail.com>
+Date:   Mon Apr 4 19:55:40 2022 +0800
+
+    fix some typos (#316)
+    

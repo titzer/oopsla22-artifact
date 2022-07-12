@@ -128,3 +128,9 @@ There are 3 branches in the source zip that build different versions of WAMR.
 (branch exp_instrumentation:    cp wasm-micro-runtime/product-mini/platforms/linux/build/iwasm ../engines/iwasm-fast)
 (branch exp_slow:               cp wasm-micro-runtime/product-mini/platforms/linux/build/iwasm ../engines/iwasm-slow)
 ```
+
+# BACKUP PATCHES
+
+As a backup in case it's not possible to either run binaries or unzip and build a source archive, patchfiles
+are also provided. They are located in the `patches/` directory and correspond to the `git diff` of the branches.
+The git hash of each respective repo against which they are diffs are also provided.

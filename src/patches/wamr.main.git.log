@@ -1,0 +1,50 @@
+commit db210fbc66ca779a7bc6748cd340cf5eab3de6d4
+Author: Xu Jun <693788454@qq.com>
+Date:   Thu Jul 7 13:53:50 2022 +0800
+
+    Remove unnecessary memset after mmap (#1273)
+    
+    Remove unnecessary memset after mmap to decrease the number of
+    page faults, as reported in #1269.
+
+commit be8ba9e1fd88998551a19198361756e73fe2add9
+Author: YAMAMOTO Takashi <yamamoto@midokura.com>
+Date:   Thu Jul 7 11:06:31 2022 +0900
+
+    wasm_export.h: mention module byte buffer mutability (#1271)
+
+commit daeb7a42658cc2a7dfe4e4d4e855ac8588c5c565
+Author: Wenyong Huang <wenyong.huang@intel.com>
+Date:   Wed Jul 6 16:53:05 2022 +0800
+
+    Don't suppress prev signal handler in hw bound check (#1268)
+    
+    Enhance the hw bound check reported in #1262:
+    
+    When registering signal handlers for SIGSEGV & SIGBUS in boundary
+    check with hardware trap, preserve the previous handlers for signal
+    SIGSEGV and SIGBUS, and forward the signal to the preserved signal
+    handlers if it isn't handled by hw bound check.
+
+commit 653efecd0273425fe1190d54094f1d5e36ceaeca
+Author: YAMAMOTO Takashi <yamamoto@midokura.com>
+Date:   Thu Jun 30 16:45:46 2022 +0900
+
+    debug_engine: Fix a few typos (#1261)
+    
+    no functional changes are intended.
+    
+    cf.
+    https://sourceware.org/gdb/onlinedocs/gdb/General-Query-Packets.html#General-Query-Packets
+
+commit 2b49a0b817f3ec21ace854764fcdd8c84ed6e1c6
+Author: YAMAMOTO Takashi <yamamoto@midokura.com>
+Date:   Wed Jun 29 14:21:03 2022 +0900
+
+    wasm_cluster_spread_custom_data: Fix a crash when called before exec (#1257)
+
+commit d5d6b7284dea84b51c63bad5dd66756368575095
+Author: YAMAMOTO Takashi <yamamoto@midokura.com>
+Date:   Wed Jun 29 13:23:58 2022 +0900
+
+    Fix a few redefinition warnings for WAMR_BUILD_DEBUG_INTERP=1 (#1256)

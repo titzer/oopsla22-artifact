@@ -1,0 +1,50 @@
+commit 158d26f874fdc438f8c995e2189e93d9c6dfc1b6
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 22:46:56 2022 -0400
+
+    [jit] Implement integer compares
+
+commit 0477867163ff07e9b62d47e793efc4fdf705887d
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 17:49:49 2022 -0400
+
+    [jit] Fix errors so unittests dont crash
+
+commit 867677602e947abefd960dd62e228a7a1efe6482
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 15:39:46 2022 -0400
+
+    [jit] Register and execute unit tests in JIT mode
+
+commit 5f3c4d26a3bd19e9f0f169fb166b41de00fc5459
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 14:38:20 2022 -0400
+
+    [test] Rename InterpreterTester to ExeTester
+
+commit ecd05f2107c7f69bee7fb24c012d4d76e849e316
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 14:30:35 2022 -0400
+
+    [jit] Add first control stack entries
+
+commit 9ca05b691cda36b739dc738a6bf258f5abdecd18
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 13:50:05 2022 -0400
+
+    [jit] Sketch support for BLOCK and LOOP
+
+commit c34093262c878dbb102712ec7b233fbfc476fbb3
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Tue Jul 5 13:24:05 2022 -0400
+
+    [jit] Fix handling of reg-reg binops
+
+commit b9df29d936a6801529e64e1fb02da412774ea9a0
+Author: Ben L. Titzer <ben.titzer@gmail.com>
+Date:   Thu Jun 30 13:52:37 2022 -0400
+
+    [x86-64] Implement MacroAssembler for SinglePassCompiler
+
+commit 98f77edf7e35e539fa9064235426dba33e6058d3
+Author: Ben L. Titzer <ben.titzer@gmail.com>
