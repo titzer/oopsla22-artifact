@@ -13,11 +13,8 @@ If you need to rebuild from source, the `.zip` files are here in the archive; no
 
 ## If you cloned from GitHub
 
-For GitHub, the `.zip` files are too large to check in, so they are included as a drive link.
-
-```
-https://drive.google.com/drive/folders/1At4Wfpny4JVlmlbJkC1rkG5ufHv2sgg2?usp=sharing
-```
+For GitHub, the `.zip` files are too large to check in, so they are included as a drive link:
+[https://drive.google.com/drive/folders/1At4Wfpny4JVlmlbJkC1rkG5ufHv2sgg2?usp=sharing](https://drive.google.com/drive/folders/1At4Wfpny4JVlmlbJkC1rkG5ufHv2sgg2?usp=sharing)
 
 In Google Drive there are `.src.zip` and `.bin.zip` files.
 You should try first downloading and extracting the `.bin.zip` files and extracting them here, in the `src` directory.
