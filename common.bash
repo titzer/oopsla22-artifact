@@ -46,7 +46,7 @@ LONG_LARGE_BENCHMARKS="2mm 3mm adi cholesky correlation covariance deriche doitg
 BENCHMARKS="bicg mvt atax gemver trmm doitgen syrk correlation covariance symm syr2k gemm gramschmidt 2mm nussinov adi 3mm fdtd-2d jacobi-2d seidel-2d heat-3d cholesky ludcmp lu"
 
 EXE_ENGINES="sm-base sm-opt v8-liftoff v8-turbofan jsc-int jsc-bbq jsc-omg wizard wasm3 wamr-classic wamr-fast"
-XLATE_ENGINES="wizard wasm3 wamr-fast jsc-int v8-liftoff jsc-bbq v8-turbofan jsc-omg"
+XLATE_ENGINES="wizard wasm3 wamr-fast jsc-int v8-liftoff jsc-bbq v8-turbofan jsc-omg sm-opt sm-base"
 
 function get_engine_cmd() {
     engine=$1
