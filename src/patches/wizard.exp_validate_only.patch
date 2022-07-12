@@ -1,0 +1,138 @@
+diff --git a/src/engine/CodeValidator.v3 b/src/engine/CodeValidator.v3
+index ce7ab6e..93d136e 100644
+--- a/src/engine/CodeValidator.v3
++++ b/src/engine/CodeValidator.v3
+@@ -21,6 +21,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		return validate(f, Decoder.new(f.code.orig, err));
+ 	}
+ 	def validate(f: FuncDecl, d: DataReader) -> CodeValidatorResult {
++		var before = System.ticksUs();
+ 		func = f;
+ 		sig = f.sig;
+ 		if (Trace.validation) {
+@@ -50,6 +51,20 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 			err.rel(d, f.code.abs_start + f.code.orig.length).UnterminatedFunctionBody();
+ 		}
+ 		func.code.sidetable = ctlxfer.extract();
++		var after = System.ticksUs();
++		GlobalCounts.valid_count++;
++		GlobalCounts.valid_us += after - before;
++		GlobalCounts.valid_bytes += func.code.orig.length;
++		if (func.code.sidetable != null) {
++			var s = func.code.sidetable, sum = 0;
++			for (i = 0; i < s.length; i += 4) {
++				var entry = 16;
++				var dpc = s[i], dxip = s[i+3], valcount = 1, popcount = 2;
++				if (i7.view(dpc) == dpc && i7.view(dxip) == dxip && s[i+valcount] == 0 && s[i+popcount] == 0) entry = 2; // possible compressed entry
++				sum += entry;
++			}
++			GlobalCounts.sidetable_bytes += sum;
++		}
+ 		if (err.ok()) return CodeValidatorResult.Ok;
+ 		return reterr();
+ 	}
+@@ -1168,3 +1183,10 @@ class SidetableBuilder {
+ 	}
+ }
+ def NO_SIDETABLE = Array<int>.new(0);
++
++component GlobalCounts {
++	var valid_count: int;
++	var valid_bytes: int;
++	var sidetable_bytes: int;
++	var valid_us: int;
++}
+diff --git a/src/wizeng.main.v3 b/src/wizeng.main.v3
+index 2278069..01ed3f6 100644
+--- a/src/wizeng.main.v3
++++ b/src/wizeng.main.v3
+@@ -54,84 +54,11 @@ def main(args: Array<string>) -> int {
+ 			.exit(3);
+ 	}
+ 
+-	// Compile the list of import processors
+-	var err = ErrorGen.new(path);
+-	var imports = Array<Exportable>.new(module.imports.length);
+-	var i = Instantiator.new(engine.extensions, module, imports, err);
+-	var map = Strings.newMap<ImportProcessor>();
+-
+-	for (j < module.imports.length) {
+-		var name = module.imports[j].imp.module_name;
+-		if (map[name] == null) {
+-			var p = HostModuleRegistry.map[name];
+-			if (p == null) return ErrorBuilder.new()
+-				.puts(path)
+-				.put2(": import[%d] from unknown module \"%s\"\n", j, name)
+-				.exit(7);
+-			var trace = Trace.moduleFilter != null && Trace.moduleFilter.matchesStr(name, null);
+-			p.init(programArgs, trace);
+-			map[name] = p;
+-			i.processors.put(p);
+-		}
+-	}
+-
+-	// Add tracing to import calls as specified by filters, if any.
+-	if (Trace.moduleFilter != null) i.binder = ImportTracer.new(Trace.moduleFilter).wrap;
+-
+-	// Add tracing to the interpreter if necessary.
+-	if (Trace.interpreter) Execute.probes.add(TraceProbe.new());
+-
+-	// Compile the module if necessary.
+-	Execute.finishModule(module, err);
+-
+-	// Run the instantiatior.
+-	var instance = i.run();
+-	if (!err.ok()) return ErrorBuilder.new()
+-		.render(err.error_code, path, err.section, err.error_index, err.error_pos, err.error_msg)
+-		.exit(6);
+-
+-	// Try to find the main entrypoint.
+-	var entry: (Function, Array<Value>);
+-	for (j < i.processors.length) {
+-		var p = i.processors[j];
+-		if (HostModule.?(p)) {
+-			entry = HostModule.!(p).getEntry(instance);
+-			if (entry.0 != null) break;
+-		}
+-	}
+-
+-	if (entry.0 == null) {
+-		entry = findDefaultMain(instance);
+-	}
+-
+-	if (entry.0 == null) return ErrorBuilder.new()
+-		.puts(path)
+-		.puts(": no main export from module\n")
+-		.exit(7);
+-
+-	// Execute the main entrypoint. (TODO: start function?)
+-	var r = Execute.call(entry.0, entry.1);
+-	match (r) {
+-		Break => ;
+-		Value(vals) => return if(vals.length == 1, Values.v_i(vals[0]));
+-		Trap(reason) => {
+-			var e = ErrorBuilder.new()
+-				.puts("trap: ")
+-				.puts(reason.name)
+-				.ln();
+-			// TODO: call back into module to render source-level stacktrace
+-			var call_stack = Execute.getCallStack();
+-			for (i = call_stack.top - 1; i >= 0; i--) {
+-				var f = call_stack.elems[i];
+-				e.puts("\t@ ");
+-				f.func.render(e);
+-				e.puts(" +");
+-				e.putd(f.pc);
+-				e.ln();
+-			}
+-			e.exit(10);
+-		}
+-	}
++	Trace.OUT.put1("validated count: %d\n", GlobalCounts.valid_count);
++	Trace.OUT.put1("validated in_bytes: %d\n", GlobalCounts.valid_bytes);
++	Trace.OUT.put1("validated out_bytes: %d\n", GlobalCounts.sidetable_bytes);
++	Trace.OUT.put1("validated us: %d", GlobalCounts.valid_us);
++	Trace.OUT.outln();
+ 	return 0;
+ }
+ 

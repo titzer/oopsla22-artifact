@@ -1,4 +1,3 @@
-- gather experimental data on kabal
 - update source zips after committing engine/branch modifications again
 
 - test build from source (unzip and instructions)
@@ -25,6 +24,7 @@
 
 - gather experimental data on magic carpet
 
+* gather experimental data on kabal
 * Add polybench source
 * fix awk issue
 * make figures.ods

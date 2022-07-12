@@ -1,0 +1,182 @@
+diff --git a/core/config.h b/core/config.h
+index db28192..02b5ea1 100644
+--- a/core/config.h
++++ b/core/config.h
+@@ -190,7 +190,7 @@
+ /* WASM Interpreter labels-as-values feature */
+ #ifndef WASM_ENABLE_LABELS_AS_VALUES
+ #ifdef __GNUC__
+-#define WASM_ENABLE_LABELS_AS_VALUES 1
++#define WASM_ENABLE_LABELS_AS_VALUES 0
+ #else
+ #define WASM_ENABLE_LABELS_AS_VALUES 0
+ #endif
+diff --git a/core/iwasm/include/wasm_export.h b/core/iwasm/include/wasm_export.h
+index 2fc3131..b4a6919 100644
+--- a/core/iwasm/include/wasm_export.h
++++ b/core/iwasm/include/wasm_export.h
+@@ -1102,6 +1102,8 @@ WASM_RUNTIME_API_EXTERN const uint8_t *
+ wasm_runtime_get_custom_section(wasm_module_t const module_comm,
+                                 const char *name, uint32_t *len);
+ 
++void dump_samples();
++
+ /* clang-format on */
+ 
+ #ifdef __cplusplus
+diff --git a/core/iwasm/interpreter/timer.h b/core/iwasm/interpreter/timer.h
+new file mode 100644
+index 0000000..4990262
+--- /dev/null
++++ b/core/iwasm/interpreter/timer.h
+@@ -0,0 +1,67 @@
++#ifndef TIMER_H
++#define TIMER_H
++
++#include <sys/time.h>
++#include <stdio.h>
++
++struct Samples {
++  long start;
++  int count;
++  int in_bytes;
++  int out_bytes;
++  int us;
++};
++
++#ifdef __cplusplus
++class Timer {
++ public:
++    long start = 0;
++    Samples& m_quantity;
++    
++   Timer(Samples& quantity) : m_quantity(quantity) {
++        struct timeval time;
++        gettimeofday(&time, 0);
++        start = time.tv_sec * 1000000 + time.tv_usec;
++   }
++   ~Timer() {
++    struct timeval time;
++        gettimeofday(&time, 0);
++        long after = time.tv_sec * 1000000 + time.tv_usec;
++
++        this->m_quantity.count++;
++        this->m_quantity.us += after - start;
++   }
++};
++#define START_TIMER(x) Timer __timer(x);
++#define END_TIMER(x)
++#else
++#define START_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    x.start = time.tv_sec * 1000000 + time.tv_usec; \
++  }
++#define END_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    long after = time.tv_sec * 1000000 + time.tv_usec; \
++    x.us += after - x.start; \
++  }
++#endif
++
++#define ADD_IN_BYTES(x, b) (x).in_bytes += (b); (x).count++;
++#define ADD_OUT_BYTES(x, b) (x).out_bytes += (b);
++
++extern struct Samples iwasm_samples;
++
++#ifdef __cplusplus
++inline void reportSamples(const char* name, Samples& quantity) {
++#else
++inline void reportSamples(const char* name, struct Samples quantity) {
++#endif
++    printf("%s count: %d\n", name, quantity.count);
++    printf("%s in_bytes: %d\n", name, quantity.in_bytes);
++    printf("%s out_bytes: %d\n", name, quantity.out_bytes);
++    printf("%s us: %d\n", name, quantity.us);
++}
++
++#endif
+diff --git a/core/iwasm/interpreter/wasm_loader.c b/core/iwasm/interpreter/wasm_loader.c
+index 82f4a30..1427ad8 100644
+--- a/core/iwasm/interpreter/wasm_loader.c
++++ b/core/iwasm/interpreter/wasm_loader.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include "wasm_loader.h"
++#include "timer.h"
+ #include "bh_common.h"
+ #include "bh_log.h"
+ #include "wasm.h"
+@@ -6514,11 +6515,19 @@ wasm_loader_get_custom_section(WASMModule *module, const char *name,
+ }
+ #endif
+ 
++struct Samples iwasm_samples;
++
++void dump_samples() {
++  reportSamples("iwasm", iwasm_samples);
++}
++
+ static bool
+ wasm_loader_prepare_bytecode(WASMModule *module, WASMFunction *func,
+                              uint32 cur_func_idx, char *error_buf,
+                              uint32 error_buf_size)
+ {
++  START_TIMER(iwasm_samples);
++  ADD_IN_BYTES(iwasm_samples, func->code_size);
+     uint8 *p = func->code, *p_end = func->code + func->code_size, *p_org;
+     uint32 param_count, local_count, global_count;
+     uint8 *param_types, *local_types, local_type, global_type;
+@@ -9372,6 +9381,7 @@ re_scan:
+ 
+     func->max_stack_cell_num = loader_ctx->preserved_local_offset
+                                - loader_ctx->start_dynamic_offset + 1;
++    ADD_OUT_BYTES(iwasm_samples, loader_ctx->code_compiled_size);
+ #else
+     func->max_stack_cell_num = loader_ctx->max_stack_cell_num;
+ #endif
+@@ -9389,5 +9399,6 @@ fail:
+     (void)p_org;
+     (void)mem_offset;
+     (void)align;
++    END_TIMER(iwasm_samples);
+     return return_value;
+ }
+diff --git a/product-mini/platforms/linux/CMakeLists.txt b/product-mini/platforms/linux/CMakeLists.txt
+index 542d277..cd496d2 100644
+--- a/product-mini/platforms/linux/CMakeLists.txt
++++ b/product-mini/platforms/linux/CMakeLists.txt
+@@ -64,7 +64,7 @@ endif ()
+ 
+ if (NOT DEFINED WAMR_BUILD_FAST_INTERP)
+   # Enable fast interpreter
+-  set (WAMR_BUILD_FAST_INTERP 1)
++  set (WAMR_BUILD_FAST_INTERP 0)
+ endif ()
+ 
+ if (NOT DEFINED WAMR_BUILD_MULTI_MODULE)
+@@ -72,6 +72,11 @@ if (NOT DEFINED WAMR_BUILD_MULTI_MODULE)
+   set (WAMR_BUILD_MULTI_MODULE 0)
+ endif ()
+ 
++if (NOT DEFINED WASM_ENABLE_LABELS_AS_VALUES)
++  # Disable threaded dispatch for this config
++  set (WASM_ENABLE_LABELS_AS_VALUES 0)
++endif ()
++
+ if (NOT DEFINED WAMR_BUILD_LIB_PTHREAD)
+   # Disable pthread library by default
+   set (WAMR_BUILD_LIB_PTHREAD 0)
+diff --git a/product-mini/platforms/posix/main.c b/product-mini/platforms/posix/main.c
+index 6942df8..e2300fc 100644
+--- a/product-mini/platforms/posix/main.c
++++ b/product-mini/platforms/posix/main.c
+@@ -576,5 +576,6 @@ fail1:
+ 
+     /* destroy runtime environment */
+     wasm_runtime_destroy();
++    dump_samples();
+     return 0;
+ }

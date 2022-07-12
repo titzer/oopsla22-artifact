@@ -1,0 +1,13 @@
+diff --git a/src/engine/x86-64/X86_64Target.v3 b/src/engine/x86-64/X86_64Target.v3
+index 8a67883..af5fb5a 100644
+--- a/src/engine/x86-64/X86_64Target.v3
++++ b/src/engine/x86-64/X86_64Target.v3
+@@ -16,7 +16,7 @@ component Target {
+ 	def getWasmCallDepth = X86_64Interpreter.getCallDepth;
+ 	var asmSpcEntry: (WasmFunction, Pointer, Pointer) -> (ExecState, TrapReason);
+ 	var globalCode: Mapping;
+-	def tagging = Tagging.new(true, false);
++	def tagging = Tagging.new(false, false); // EXP: disable tagging and SIMD for performance tests
+ 
+ 	new() {
+ 		Execute.probes.onEnable = X86_64Interpreter.onProbeEnable;

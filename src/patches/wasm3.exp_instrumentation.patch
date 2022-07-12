@@ -1,0 +1,187 @@
+diff --git a/platforms/app/main.c b/platforms/app/main.c
+index d4af4e4..aec3bed 100644
+--- a/platforms/app/main.c
++++ b/platforms/app/main.c
+@@ -5,6 +5,7 @@
+ //  All rights reserved.
+ //
+ 
++#include "timer.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <time.h>
+@@ -64,6 +65,11 @@ m3ApiRawFunction(metering_usegas)
+ 
+ #endif // GAS_LIMIT
+ 
++void wasm3_exit(int code) {
++  reportSamples("m3", m3_samples);
++  exit(code);
++}
++
+ 
+ M3Result link_all  (IM3Module module)
+ {
+@@ -276,7 +282,7 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
+         print_gas_used();
+ 
+         if (result == m3Err_trapExit) {
+-            exit(wasi_ctx->exit_code);
++            wasm3_exit(wasi_ctx->exit_code);
+         }
+ 
+         return result;
+@@ -295,6 +301,7 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
+ 
+     result = m3_CallArgv (func, argc, argv);
+ 
++
+     print_gas_used();
+ 
+     if (result) return result;
+@@ -718,6 +725,6 @@ _onfatal:
+ 
+     m3_FreeRuntime (runtime);
+     m3_FreeEnvironment (env);
+-
++    wasm3_exit(result ? 1 : 0);
+     return result ? 1 : 0;
+ }
+diff --git a/platforms/cpp/main.cpp b/platforms/cpp/main.cpp
+index 93b4dcb..2bdc6cd 100644
+--- a/platforms/cpp/main.cpp
++++ b/platforms/cpp/main.cpp
+@@ -2,6 +2,7 @@
+ #include <cstring>
+ #include <fstream>
+ 
++#include "timer.h"
+ #include "wasm3_cpp.h"
+ #include "wasm/test_prog.wasm.h"
+ 
+diff --git a/source/m3_compile.c b/source/m3_compile.c
+index 8a93330..2dd23e2 100644
+--- a/source/m3_compile.c
++++ b/source/m3_compile.c
+@@ -8,6 +8,7 @@
+ // Allow using opcodes for compilation process
+ #define M3_COMPILE_OPCODES
+ 
++#include "timer.h"
+ #include "m3_env.h"
+ #include "m3_compile.h"
+ #include "m3_exec.h"
+@@ -2828,9 +2829,11 @@ M3Result  ReserveConstants  (IM3Compilation o)
+     return result;
+ }
+ 
++struct Samples m3_samples;
+ 
+ M3Result  CompileFunction  (IM3Function io_function)
+ {
++  START_TIMER(m3_samples);
+     if (!io_function->wasm) return "function body is missing";
+ 
+     IM3FuncType funcType = io_function->funcType;                   m3log (compile, "compiling: [%d] %s %s; wasm-size: %d",
+@@ -2847,13 +2850,18 @@ M3Result  CompileFunction  (IM3Function io_function)
+     o->wasmEnd  = io_function->wasmEnd;
+     o->block.type = funcType;
+ 
++    u32 before = 0;
+ _try {
+     // skip over code size. the end was already calculated during parse phase
+     u32 size;
+ _   (ReadLEB_u32 (& size, & o->wasm, o->wasmEnd));                  d_m3Assert (size == (o->wasmEnd - o->wasm))
+ 
++                                                                      ADD_IN_BYTES(m3_samples, size);
++
+ _   (AcquireCompilationCodePage (o, & o->page));
+ 
++ before = o->page->info.lineIndex;
++
+     pc_t pc = GetPagePC (o->page);
+ 
+     u16 numRetSlots = GetFunctionNumReturns (o->function) * c_ioSlotCount;
+@@ -2916,7 +2924,9 @@ _   (CompileBlockStatements (o));
+ 
+ } _catch:
+ 
++ ADD_OUT_BYTES(m3_samples, (o->page->info.lineIndex - before) * sizeof(code_t));
+     ReleaseCompilationCodePage (o);
+ 
++    END_TIMER(m3_samples);
+     return result;
+ }
+diff --git a/source/timer.h b/source/timer.h
+new file mode 100644
+index 0000000..759ff87
+--- /dev/null
++++ b/source/timer.h
+@@ -0,0 +1,67 @@
++#ifndef TIMER_H
++#define TIMER_H
++
++#include <sys/time.h>
++#include <stdio.h>
++
++struct Samples {
++  long start;
++  int count;
++  int in_bytes;
++  int out_bytes;
++  int us;
++};
++
++#ifdef __cplusplus
++class Timer {
++ public:
++    long start = 0;
++    Samples& m_quantity;
++    
++   Timer(Samples& quantity) : m_quantity(quantity) {
++        struct timeval time;
++        gettimeofday(&time, 0);
++        start = time.tv_sec * 1000000 + time.tv_usec;
++   }
++   ~Timer() {
++    struct timeval time;
++        gettimeofday(&time, 0);
++        long after = time.tv_sec * 1000000 + time.tv_usec;
++
++        this->m_quantity.count++;
++        this->m_quantity.us += after - start;
++   }
++};
++#define START_TIMER(x) Timer __timer(x);
++#define END_TIMER(x)
++#else
++#define START_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    x.start = time.tv_sec * 1000000 + time.tv_usec; \
++  }
++#define END_TIMER(x) { \
++    struct timeval time; \
++    gettimeofday(&time, 0); \
++    long after = time.tv_sec * 1000000 + time.tv_usec; \
++    x.us += after - x.start; \
++  }
++#endif
++
++#define ADD_IN_BYTES(x, b) (x).in_bytes += (b); (x).count++;
++#define ADD_OUT_BYTES(x, b) (x).out_bytes += (b);
++
++extern struct Samples m3_samples;
++
++#ifdef __cplusplus
++inline void reportSamples(const char* name, Samples& quantity) {
++#else
++inline void reportSamples(const char* name, struct Samples quantity) {
++#endif
++    printf("%s count: %d\n", name, quantity.count);
++    printf("%s in_bytes: %d\n", name, quantity.in_bytes);
++    printf("%s out_bytes: %d\n", name, quantity.out_bytes);
++    printf("%s us: %d\n", name, quantity.us);
++}
++
++#endif

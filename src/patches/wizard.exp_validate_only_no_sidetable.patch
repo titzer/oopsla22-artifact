@@ -1,0 +1,339 @@
+diff --git a/src/engine/CodeValidator.v3 b/src/engine/CodeValidator.v3
+index ce7ab6e..f92d86d 100644
+--- a/src/engine/CodeValidator.v3
++++ b/src/engine/CodeValidator.v3
+@@ -10,7 +10,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 	def locals = Vector<ValueType>.new();
+ 	def val_stack = ArrayStack<ValueType>.new();
+ 	def ctl_stack = ArrayStack<ControlEntry>.new();
+-	def ctlxfer = SidetableBuilder.new();
++//	def ctlxfer = SidetableBuilder.new();
+ 	var ctl_top: ControlEntry;  // FAST: cache of top of control stack
+ 	var func: FuncDecl;
+ 	var sig: SigDecl;
+@@ -21,6 +21,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		return validate(f, Decoder.new(f.code.orig, err));
+ 	}
+ 	def validate(f: FuncDecl, d: DataReader) -> CodeValidatorResult {
++		var before = System.ticksUs();
+ 		func = f;
+ 		sig = f.sig;
+ 		if (Trace.validation) {
+@@ -33,7 +34,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		parser.reset(d);
+ 		ctl_stack.clear();
+ 		val_stack.clear();
+-		ctlxfer.reset(parser.decoder.pos);
++//		ctlxfer.reset(parser.decoder.pos);
+ 
+ 		// setup params
+ 		locals.resize(0);
+@@ -49,7 +50,21 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 			// TODO: double-check this error position
+ 			err.rel(d, f.code.abs_start + f.code.orig.length).UnterminatedFunctionBody();
+ 		}
+-		func.code.sidetable = ctlxfer.extract();
++//		func.code.sidetable = ctlxfer.extract();
++		var after = System.ticksUs();
++		GlobalCounts.valid_count++;
++		GlobalCounts.valid_us += after - before;
++		GlobalCounts.valid_bytes += func.code.orig.length;
++		if (func.code.sidetable != null) {
++			var s = func.code.sidetable, sum = 0;
++			for (i = 0; i < s.length; i += 4) {
++				var entry = 16;
++				var dpc = s[i], dxip = s[i+3], valcount = 1, popcount = 2;
++				if (i7.view(dpc) == dpc && i7.view(dxip) == dxip && s[i+valcount] == 0 && s[i+popcount] == 0) entry = 2; // possible compressed entry
++				sum += entry;
++			}
++			GlobalCounts.sidetable_bytes += sum;
++		}
+ 		if (err.ok()) return CodeValidatorResult.Ok;
+ 		return reterr();
+ 	}
+@@ -108,14 +123,14 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 				Opcode.LOOP.code => {
+ 					var sig = parser.readBlockType();
+ 					checkArgsAndPushControl(opcode, sig);
+-					ctl_top.sidetable_pos = ctlxfer.sidetable.length;
++//					ctl_top.sidetable_pos = ctlxfer.sidetable.length;
+ 					ctl_top.next_pos = parser.decoder.pos;
+ 				}
+ 				Opcode.IF.code => {
+ 					var sig = parser.readBlockType();
+ 					popE(ValueType.I32);
+ 					var ctl = checkArgsAndPushControl(opcode, sig);
+-					ctlxfer.ref0(ctl, opcode_pos);
++//					ctlxfer.ref0(ctl, opcode_pos);
+ 					ctl_top.reachable = true; // true block now reachable
+ 				}
+ 				Opcode.ELSE.code => {
+@@ -123,15 +138,15 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 						return err_atpc().MismatchedElse();
+ 					}
+ 					checkArgsAndTransfer();
+-					var if_branch = ctl_top.ctl_refs[0];
+-					ctl_top.ctl_refs[0] = -1;
++//					var if_branch = ctl_top.ctl_refs[0];
++//					ctl_top.ctl_refs[0] = -1;
+ 					// branches within if-true block go to "else"...
+-					ctlxfer.bind(ctl_top, opcode_pos, ctlxfer.sidetable.length);
++//					ctlxfer.bind(ctl_top, opcode_pos, ctlxfer.sidetable.length);
+ 					// ... except false target of "if"
+-					ctl_top.ctl_refs.put(if_branch);
+-					ctlxfer.bind(ctl_top, opcode_pos + 1, ctlxfer.sidetable.length + 4);
++//					ctl_top.ctl_refs.put(if_branch);
++//					ctlxfer.bind(ctl_top, opcode_pos + 1, ctlxfer.sidetable.length + 4);
+ 					// "else" implicitly goes to end
+-					ctlxfer.ref0(ctl_top, opcode_pos);
++//					ctlxfer.ref0(ctl_top, opcode_pos);
+ 
+ 					ctl_top.start_opcode = opcode;
+ 					ctl_top.reachable = true;
+@@ -144,19 +159,19 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 					var ctl = ctl_stack.peek();
+ 					var next_pos = parser.decoder.pos; // target next bytecode if possible
+ 					if (ctl.start_opcode == Opcode.LOOP.code) {
+-						ctlxfer.bind(ctl, ctl.next_pos, ctl.sidetable_pos);
++//						ctlxfer.bind(ctl, ctl.next_pos, ctl.sidetable_pos);
+ 					} else if (ctl.start_opcode == Opcode.IF.code) {
+ 						// one-armed if; simulate an empty else clause
+ 						val_stack.top = ctl_top.val_stack_top;
+ 						ctl_top.reachable = true;
+ 						pushTypes(ctl.sig.params);
+ 						checkArgsAndTransfer();
+-						ctlxfer.bind(ctl, next_pos, ctlxfer.sidetable.length);
++//						ctlxfer.bind(ctl, next_pos, ctlxfer.sidetable.length);
+ 					} else if (ctl.start_opcode == Opcode.BLOCK.code) {
+-						ctlxfer.bind(ctl, next_pos, ctlxfer.sidetable.length);
++//						ctlxfer.bind(ctl, next_pos, ctlxfer.sidetable.length);
+ 					} else {
+ 						// the end bytecode of the function must be executed to tear frame down
+-						ctlxfer.bind(ctl, opcode_pos, ctlxfer.sidetable.length);
++//						ctlxfer.bind(ctl, opcode_pos, ctlxfer.sidetable.length);
+ 					}
+ 					ctl_stack.pop();
+ 					ctl_top = ctl_stack.peek();
+@@ -165,7 +180,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 					var depth = parser.readLabel();
+ 					var target = getControl(depth);
+ 					if (target == null) return;
+-					ctlxfer.refS(target, opcode_pos, val_stack);
++//					ctlxfer.refS(target, opcode_pos, val_stack);
+ 					checkAndPopArgs(labelArgs(target));
+ 					setUnreachable();
+ 				}
+@@ -174,7 +189,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 					var target = getControl(depth);
+ 					if (target == null) return;
+ 					popE(ValueType.I32);
+-					ctlxfer.refS(target, opcode_pos, val_stack);
++//					ctlxfer.refS(target, opcode_pos, val_stack);
+ 					var args = labelArgs(target);
+ 					checkAndPopArgs(args);
+ 					pushTypes(args);
+@@ -182,7 +197,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 				Opcode.BR_TABLE.code => {
+ 					var labels = parser.readLabels();
+ 					popE(ValueType.I32);
+-					ctlxfer.sidetable.put(labels.length).put(0).put(0).put(0);
++//					ctlxfer.sidetable.put(labels.length).put(0).put(0).put(0);
+ 					// add refs for all labels and check args
+ 					var arity = -1;
+ 					for (i < labels.length) {
+@@ -193,7 +208,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 						if (arity < 0) arity = args.length;
+ 						else if (arity != args.length) err_atpc().BrTableArityMismatch(arity, i, args.length);
+ 						checkTargetArgs(target);
+-						ctlxfer.refS(target, opcode_pos + i + 1, val_stack);
++//						ctlxfer.refS(target, opcode_pos + i + 1, val_stack);
+ 					}
+ 					setUnreachable();
+ 				}
+@@ -409,11 +424,11 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 						var rt = t.0, nonnull = asNonNullRefType(rt);
+ 						if (opcode == Opcode.BR_ON_NON_NULL.code) {
+ 							push(nonnull);
+-							ctlxfer.refS(target, opcode_pos, val_stack);
++//							ctlxfer.refS(target, opcode_pos, val_stack);
+ 							checkTargetArgs(target);
+ 							popAny();
+ 						} else {
+-							ctlxfer.refS(target, opcode_pos, val_stack);
++//							ctlxfer.refS(target, opcode_pos, val_stack);
+ 							checkTargetArgs(target);
+ 							push(nonnull);
+ 						}
+@@ -607,7 +622,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 							var target = getControl(depth);
+ 							if (target == null) return;
+ 							var rtt = popRtt();
+-							ctlxfer.refS(target, opcode_pos, val_stack);
++//							ctlxfer.refS(target, opcode_pos, val_stack);
+ 							var ref = popRef();
+ 							if (ref.1) checkRttSubtype(ref.0, rtt.0);
+ 							push(ValueTypes.Ref(false, rtt.0.hdecl));
+@@ -619,7 +634,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 							var target = getControl(depth);
+ 							if (target == null) return;
+ 							var rtt = popRtt();
+-							ctlxfer.refS(target, opcode_pos, val_stack);
++//							ctlxfer.refS(target, opcode_pos, val_stack);
+ 							var ref = popRef();
+ 							if (ref.1) checkRttSubtype(ref.0, rtt.0);
+ 							push(ref.0); // leave original value
+@@ -836,7 +851,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		if (target == null) return;
+ 		var t = popRef();
+ 		push(rt);   // transfer casted value
+-		ctlxfer.refS(target, opcode_pos, val_stack);
++//		ctlxfer.refS(target, opcode_pos, val_stack);
+ 		checkAndPopArgs(labelArgs(target));
+ 		push(t.0);  // leave original value
+ 	}
+@@ -846,7 +861,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		if (target == null) return;
+ 		var t = popRef();
+ 		push(t.0);  // transfer original value
+-		ctlxfer.refS(target, opcode_pos, val_stack);
++//		ctlxfer.refS(target, opcode_pos, val_stack);
+ 		checkAndPopArgs(labelArgs(target));
+ 		push(rt); // leave casted value
+ 	}
+@@ -892,7 +907,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		if (lane > max) err_atpc().IllegalLane(max, lane);
+ 	}
+ 	def traceOpcode() {
+-		OUT.put2("  %x(+%d): ", opcode_pos, opcode_pos - ctlxfer.start_pos);
++//		OUT.put2("  %x(+%d): ", opcode_pos, opcode_pos - ctlxfer.start_pos);
+ 		var codeptr = parser.decoder;
+ 		var prev = codeptr.pos;
+ 		codeptr.at(opcode_pos);
+@@ -1057,11 +1072,11 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		ctl_top = ctl;
+ 		ctl.start_pos = opcode_pos;
+ 		ctl.start_opcode = opcode;
+-		ctl.sidetable_pos = -1;
++//		ctl.sidetable_pos = -1;
+ 		ctl.sig = sig;
+ 		ctl.val_stack_top = val_stack_top;
+ 		ctl.reachable = true;
+-		ctl.ctl_refs.resize(0);
++//		ctl.ctl_refs.resize(0);
+ 		return ctl;
+ 	}
+ 	def getControl(depth: u32) -> ControlEntry {
+@@ -1071,7 +1086,7 @@ class CodeValidator(extensions: Extension.set, limits: Limits,
+ 		}
+ 		var result = ctl_stack.elems[ctl_stack.top - int.!(depth) - 1];
+ 		if (Trace.validation) {
+-			OUT.put2("    label: depth=%d @+%d", depth, result.start_pos - ctlxfer.start_pos).outln();
++//			OUT.put2("    label: depth=%d @+%d", depth, result.start_pos - ctlxfer.start_pos).outln();
+ 		}
+ 		return result;
+ 	}
+@@ -1168,3 +1183,10 @@ class SidetableBuilder {
+ 	}
+ }
+ def NO_SIDETABLE = Array<int>.new(0);
++
++component GlobalCounts {
++	var valid_count: int;
++	var valid_bytes: int;
++	var sidetable_bytes: int;
++	var valid_us: int;
++}
+diff --git a/src/wizeng.main.v3 b/src/wizeng.main.v3
+index 2278069..01ed3f6 100644
+--- a/src/wizeng.main.v3
++++ b/src/wizeng.main.v3
+@@ -54,84 +54,11 @@ def main(args: Array<string>) -> int {
+ 			.exit(3);
+ 	}
+ 
+-	// Compile the list of import processors
+-	var err = ErrorGen.new(path);
+-	var imports = Array<Exportable>.new(module.imports.length);
+-	var i = Instantiator.new(engine.extensions, module, imports, err);
+-	var map = Strings.newMap<ImportProcessor>();
+-
+-	for (j < module.imports.length) {
+-		var name = module.imports[j].imp.module_name;
+-		if (map[name] == null) {
+-			var p = HostModuleRegistry.map[name];
+-			if (p == null) return ErrorBuilder.new()
+-				.puts(path)
+-				.put2(": import[%d] from unknown module \"%s\"\n", j, name)
+-				.exit(7);
+-			var trace = Trace.moduleFilter != null && Trace.moduleFilter.matchesStr(name, null);
+-			p.init(programArgs, trace);
+-			map[name] = p;
+-			i.processors.put(p);
+-		}
+-	}
+-
+-	// Add tracing to import calls as specified by filters, if any.
+-	if (Trace.moduleFilter != null) i.binder = ImportTracer.new(Trace.moduleFilter).wrap;
+-
+-	// Add tracing to the interpreter if necessary.
+-	if (Trace.interpreter) Execute.probes.add(TraceProbe.new());
+-
+-	// Compile the module if necessary.
+-	Execute.finishModule(module, err);
+-
+-	// Run the instantiatior.
+-	var instance = i.run();
+-	if (!err.ok()) return ErrorBuilder.new()
+-		.render(err.error_code, path, err.section, err.error_index, err.error_pos, err.error_msg)
+-		.exit(6);
+-
+-	// Try to find the main entrypoint.
+-	var entry: (Function, Array<Value>);
+-	for (j < i.processors.length) {
+-		var p = i.processors[j];
+-		if (HostModule.?(p)) {
+-			entry = HostModule.!(p).getEntry(instance);
+-			if (entry.0 != null) break;
+-		}
+-	}
+-
+-	if (entry.0 == null) {
+-		entry = findDefaultMain(instance);
+-	}
+-
+-	if (entry.0 == null) return ErrorBuilder.new()
+-		.puts(path)
+-		.puts(": no main export from module\n")
+-		.exit(7);
+-
+-	// Execute the main entrypoint. (TODO: start function?)
+-	var r = Execute.call(entry.0, entry.1);
+-	match (r) {
+-		Break => ;
+-		Value(vals) => return if(vals.length == 1, Values.v_i(vals[0]));
+-		Trap(reason) => {
+-			var e = ErrorBuilder.new()
+-				.puts("trap: ")
+-				.puts(reason.name)
+-				.ln();
+-			// TODO: call back into module to render source-level stacktrace
+-			var call_stack = Execute.getCallStack();
+-			for (i = call_stack.top - 1; i >= 0; i--) {
+-				var f = call_stack.elems[i];
+-				e.puts("\t@ ");
+-				f.func.render(e);
+-				e.puts(" +");
+-				e.putd(f.pc);
+-				e.ln();
+-			}
+-			e.exit(10);
+-		}
+-	}
++	Trace.OUT.put1("validated count: %d\n", GlobalCounts.valid_count);
++	Trace.OUT.put1("validated in_bytes: %d\n", GlobalCounts.valid_bytes);
++	Trace.OUT.put1("validated out_bytes: %d\n", GlobalCounts.sidetable_bytes);
++	Trace.OUT.put1("validated us: %d", GlobalCounts.valid_us);
++	Trace.OUT.outln();
+ 	return 0;
+ }
+ 

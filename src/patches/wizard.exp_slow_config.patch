@@ -1,0 +1,17 @@
+diff --git a/src/engine/x86-64/Tuning.v3 b/src/engine/x86-64/Tuning.v3
+index a82a24b..c9ee1e0 100644
+--- a/src/engine/x86-64/Tuning.v3
++++ b/src/engine/x86-64/Tuning.v3
+@@ -4,9 +4,9 @@
+ // Options that control techniques that primarily impact interpreter performance.
+ class X86_64InterpreterTuning {
+ 	var dispatchTableReg = true;	// required for global interpreter loop instrumentation
+-	var threadedDispatch = true;	// inline dispatch at the end of every handler
++	var threadedDispatch = false;	// inline dispatch at the end of every handler
+ 	var handlerAlignment = 1;	// align handler code in memory
+-	var dispatchEntrySize = 4;	// size of each dispatch table entry
++	var dispatchEntrySize = 2;	// size of each dispatch table entry
+ 	var useTypeTagTable = false;	// enables support for abstract types
+-	var inlineAllLEBs = false;	// always inline LEB slow cases
++	var inlineAllLEBs = true;	// always inline LEB slow cases
+ }
