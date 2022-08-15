@@ -5,7 +5,7 @@
 }
 END {
     if (NR < 20) p95 = nums[NR - 1]
-    else p95 = nums[NR * 95 / 100]
+    else p95 = nums[int(NR * 95 / 100)]
 
 #    asort(nums)  #  Here, we sort the array that
 #                 #+ contains the stored input
