@@ -1,16 +1,18 @@
 diff --git a/platforms/app/main.c b/platforms/app/main.c
-index d4af4e4..aec3bed 100644
+index d4af4e4..ac010c7 100644
 --- a/platforms/app/main.c
 +++ b/platforms/app/main.c
-@@ -5,6 +5,7 @@
+@@ -5,6 +5,9 @@
  //  All rights reserved.
  //
  
++#define DEFINE_REPORT
++
 +#include "timer.h"
  #include <stdio.h>
  #include <stdlib.h>
  #include <time.h>
-@@ -64,6 +65,11 @@ m3ApiRawFunction(metering_usegas)
+@@ -64,6 +67,11 @@ m3ApiRawFunction(metering_usegas)
  
  #endif // GAS_LIMIT
  
@@ -22,7 +24,7 @@ index d4af4e4..aec3bed 100644
  
  M3Result link_all  (IM3Module module)
  {
-@@ -276,7 +282,7 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
+@@ -276,7 +284,7 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
          print_gas_used();
  
          if (result == m3Err_trapExit) {
@@ -31,7 +33,7 @@ index d4af4e4..aec3bed 100644
          }
  
          return result;
-@@ -295,6 +301,7 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
+@@ -295,6 +303,7 @@ M3Result repl_call  (const char* name, int argc, const char* argv[])
  
      result = m3_CallArgv (func, argc, argv);
  
@@ -39,7 +41,7 @@ index d4af4e4..aec3bed 100644
      print_gas_used();
  
      if (result) return result;
-@@ -718,6 +725,6 @@ _onfatal:
+@@ -718,6 +727,6 @@ _onfatal:
  
      m3_FreeRuntime (runtime);
      m3_FreeEnvironment (env);
@@ -114,10 +116,10 @@ index 8a93330..2dd23e2 100644
  }
 diff --git a/source/timer.h b/source/timer.h
 new file mode 100644
-index 0000000..759ff87
+index 0000000..8b57073
 --- /dev/null
 +++ b/source/timer.h
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,73 @@
 +#ifndef TIMER_H
 +#define TIMER_H
 +
@@ -173,10 +175,16 @@ index 0000000..759ff87
 +
 +extern struct Samples m3_samples;
 +
-+#ifdef __cplusplus
-+inline void reportSamples(const char* name, Samples& quantity) {
++#ifdef DEFINE_REPORT
++#define REPORT_INLINE
 +#else
-+inline void reportSamples(const char* name, struct Samples quantity) {
++#define REPORT_INLINE inline
++#endif
++
++#ifdef __cplusplus
++REPORT_INLINE void reportSamples(const char* name, Samples& quantity) {
++#else
++REPORT_INLINE void reportSamples(const char* name, struct Samples quantity) {
 +#endif
 +    printf("%s count: %d\n", name, quantity.count);
 +    printf("%s in_bytes: %d\n", name, quantity.in_bytes);

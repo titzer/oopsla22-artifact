@@ -1,29 +1,16 @@
-- update source zips after committing engine/branch modifications again
+- make final archive (.zip) for OOPSLA artifact submission
 
-- test build from source (unzip and instructions)
-  wizard
-   - needs exp_slow_config
-   * build
-  wasm3
-   - needs timer.h to be committed
-   - undefined reference to reportSamples
-  wamr
-   - timer.h not included
-  v8
-   - needs commit of function-compiler
-   * builds
-  spidermonkey
-   - timer.h not committed
-   - no distutils.util (sudo apt-get install python3-distutils)
-   - no zlib (sudo apt install zlib1g-dev)
-   * builds, but has warning for timer include
-  jsc
-   - need to apply second patch
-   * builds
-
-
-- gather experimental data on magic carpet
-
+* add documentation to README on where to get source/bin zips
+* upload final zips to Google Drive
+* test build from source (unzip and instructions)
+ * wizard
+ * wasm3
+ * wamr
+ * v8
+ * spidermonkey
+ * jsc
+* update source zips after committing engine/branch modifications again
+* gather experimental data on magic carpet
 * gather experimental data on kabal
 * Add polybench source
 * fix awk issue
@@ -35,5 +22,5 @@
 * try removing all but the binary directories
 * statically-link JSC (again)
 * update README for chart
-@ pathological program with 8x for wamr-classic
+
 
