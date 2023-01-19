@@ -20,6 +20,7 @@ WIZENG_VALID=$E/wizeng-valid
 WIZENG_NO_SIDETABLE=$E/wizeng-no-sidetable
 WIZENG_FAST=$E/wizeng-fast
 WIZENG_SLOW=$E/wizeng-slow
+WIZENG_JIT=$E/wizeng-jit
 WASM3=$E/wasm3
 WAMR_SLOW=$E/iwasm-slow
 WAMR_CLASSIC=$E/iwasm-classic
@@ -32,6 +33,7 @@ JSC_TIER_OMG="--useWasmLLInt=false --useOMGJIT=false --useBBQJIT=true --wasmBBQU
 JSC_TIER_BBQ="--useWasmLLInt=false --useOMGJIT=false --useBBQJIT=true"
 SM_TIER_BASELINE="--wasm-compiler=baseline"
 SM_TIER_OPT="--wasm-compiler=optimizing"
+WIZENG_TIER_JIT="-mode=jit"
 
 COLORS=${COLORS:=true}
 RUNS=${RUNS:=100}
@@ -45,8 +47,8 @@ LONG_LARGE_BENCHMARKS="2mm 3mm adi cholesky correlation covariance deriche doitg
 
 BENCHMARKS="bicg mvt atax gemver trmm doitgen syrk correlation covariance symm syr2k gemm gramschmidt 2mm nussinov adi 3mm fdtd-2d jacobi-2d seidel-2d heat-3d cholesky ludcmp lu"
 
-EXE_ENGINES="sm-base sm-opt v8-liftoff v8-turbofan jsc-int jsc-bbq jsc-omg wizard wasm3 wamr-classic wamr-fast"
-XLATE_ENGINES="wizard wasm3 wamr-fast jsc-int v8-liftoff jsc-bbq v8-turbofan jsc-omg sm-opt sm-base"
+EXE_ENGINES="sm-base sm-opt v8-liftoff v8-turbofan jsc-int jsc-bbq jsc-omg wizard wizard-jit wasm3 wamr-classic wamr-fast"
+XLATE_ENGINES="wizard wasm3 wamr-fast jsc-int v8-liftoff jsc-bbq v8-turbofan jsc-omg sm-opt sm-base wizard-jit"
 
 function get_engine_cmd() {
     engine=$1
@@ -79,6 +81,9 @@ function get_engine_cmd() {
             ;;
         "wizard-slow")
             echo $WIZENG_SLOW
+            ;;
+        "wizard-jit")
+            echo $WIZENG_JIT $WIZENG_TIER_JIT
             ;;
         "wasm3")
             echo $WASM3

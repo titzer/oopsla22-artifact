@@ -93,6 +93,22 @@ function wizard_sidetable_time() {
     extract_diff $F $G validated
 }
 
+function wizard_jit_time() {
+    F=/tmp/wizard-jit.translation
+    $WIZENG_JIT $WIZENG_TIER_JIT --metrics=* $@ > $F
+    
+    a_count=$(echo $(grep "spc:functions" $F  | awk '{print $3}'))
+    a_in=$(echo    $(grep "spc:in_bytes" $F   | awk '{print $3}'))
+    a_out=$(echo   $(grep "spc:code_bytes" $F | awk '{print $3}'))
+    a_us=$(echo    $(grep "spc:time_us" $F    | awk '{print $3}'))
+    
+    us=$(ratio $a_us $a_in)
+    bytes=$(ratio $a_out $a_in)
+    echo us=$us bytes=$bytes count=$a_count
+    echo $us >> $DATAFILE.us
+    echo $bytes >> $DATAFILE.bytes
+}
+
 function jsc_int_translation_time() {
     F=/tmp/jsc.int.translation
     $JSC $JSC_TIER_INT run.js -- $@ > $F
@@ -160,6 +176,9 @@ for BENCHMARK in $BENCHMARKS; do
         case $ENGINE in
             "wizard")
                 run "wizard" wizard_sidetable_time $w
+                ;;
+            "wizard-jit")
+                run "wizard-jit" wizard_jit_time $w
                 ;;
             "wasm3")
                 run "wasm3" wasm3_translation_time $w

@@ -2,7 +2,7 @@
 
 . ./common.bash
 
-ENGINES=${ENGINES:="v8-turbofan jsc-omg sm-opt jsc-bbq sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard wamr-classic"}
+ENGINES=${ENGINES:="v8-turbofan jsc-omg sm-opt jsc-bbq sm-base v8-liftoff wasm3 jsc-int wamr-fast wizard wamr-classic wizard-jit"}
 
 if [ $# != 0 ]; then
     BENCHMARKS=$@
